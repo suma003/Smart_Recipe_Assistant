@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}
+Edit Recipe - Smart Recipe Assistant
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <!-- PAGE HEADER -->
+    <div class="form-page-header">
+        <div>
+            <h1>✏️ Edit Recipe</h1>
+            <p>Update your recipe information.</p>
+        </div>
+        <a href="{{ url_for('recipe_detail', recipe_id=recipe['RecipeID']) }}" class="btn btn-secondary">
+            ← Back to Recipe
+        </a>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="recipe-form">
+
+        <!-- =========================
+             BASIC INFORMATION
+        ========================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>🍲</span>
+                <div>
+                    <h2>Basic Information</h2>
+                    <p>Update the basic details of your recipe.</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="title">Recipe Title *</label>
+                <input 
+                    type="text" 
+                    id="title" 
+                    name="title" 
+                    value="{{ recipe['Title'] }}" 
+                    placeholder="Recipe title" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description *</label>
+                <textarea 
+                    id="description" 
+                    name="description" 
+                    rows="4" 
+                    placeholder="Short description of your recipe..." 
+                    required
+                >{{ recipe['Description'] }}</textarea>
+            </div>
+        </div>
+
+
+        <!-- =========================
+             CATEGORY & CUISINE
+        ========================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>🍽️</span>
+                <div>
+                    <h2>Category & Cuisine</h2>
+                    <p>Select the meal type and cuisine.</p>
+                </div>
+            </div>
+
+            <div class="form-two-column">
+                <!-- MEAL TYPE -->
+                <div class="form-group">
+                    <label for="meal_type_id">Meal Type *</label>
+                    <select id="meal_type_id" name="meal_type_id" required>
+                        {% for meal in meal_types %}
+                            <option value="{{ meal['MealTypeID'] }}" {% if meal['MealTypeID'] == recipe['MealTypeID'] %}selected{% endif %}>
+                                {{ meal['Name'] }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- CUISINE -->
+                <div class="form-group">
+                    <label for="cuisine_id">Cuisine *</label>
+                    <select id="cuisine_id" name="cuisine_id" required>
+                        {% for cuisine in cuisines %}
+                            <option value="{{ cuisine['CuisineID'] }}" {% if cuisine['CuisineID'] == recipe['CuisineID'] %}selected{% endif %}>
+                                {{ cuisine['Name'] }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- =========================
+             COOKING DETAILS
+        ========================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>⏱️</span>
+                <div>
+                    <h2>Cooking Details</h2>
+                    <p>Update cooking time, difficulty and preferences.</p>
+                </div>
+            </div>
+
+            <div class="form-three-column">
+                <!-- COOKING TIME -->
+                <div class="form-group">
+                    <label for="cooking_time">Cooking Time *</label>
+                    <input 
+                        type="number" 
+                        id="cooking_time" 
+                        name="cooking_time" 
+                        min="1" 
+                        value="{{ recipe['CookingTime'] }}" 
+                        required
+                    >
+                    <small>Minutes</small>
+                </div>
+
+                <!-- DIFFICULTY -->
+                <div class="form-group">
+                    <label for="difficulty">Difficulty *</label>
+                    <select id="difficulty" name="difficulty" required>
+                        <option value="Easy" {% if recipe['Difficulty'] == 'Easy' %}selected{% endif %}>Easy</option>
+                        <option value="Medium" {% if recipe['Difficulty'] == 'Medium' %}selected{% endif %}>Medium</option>
+                        <option value="Hard" {% if recipe['Difficulty'] == 'Hard' %}selected{% endif %}>Hard</option>
+                    </select>
+                </div>
+
+                <!-- SPICE LEVEL -->
+                <div class="form-group">
+                    <label for="spice_level">Spice Level</label>
+                    <select id="spice_level" name="spice_level">
+                        <option value="Mild" {% if recipe['SpiceLevel'] == 'Mild' %}selected{% endif %}>Mild</option>
+                        <option value="Medium" {% if recipe['SpiceLevel'] == 'Medium' %}selected{% endif %}>Medium</option>
+                        <option value="Spicy" {% if recipe['SpiceLevel'] == 'Spicy' %}selected{% endif %}>Spicy</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- DIET TYPE -->
+            <div class="form-group" style="margin-top: 15px;">
+                <label for="diet_type">Diet Type</label>
+                <select id="diet_type" name="diet_type">
+                    <option value="Regular" {% if recipe['DietType'] == 'Regular' %}selected{% endif %}>Regular</option>
+                    <option value="Vegetarian" {% if recipe['DietType'] == 'Vegetarian' %}selected{% endif %}>Vegetarian</option>
+                    <option value="Vegan" {% if recipe['DietType'] == 'Vegan' %}selected{% endif %}>Vegan</option>
+                </select>
+            </div>
+        </div>
+
+
+        <!-- =========================
+             INGREDIENTS
+        ========================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>🥕</span>
+                <div>
+                    <h2>Ingredients</h2>
+                    <p>
+                        Update the ingredients used in this recipe. 
+                        Can't find an ingredient? <a href="{{ url_for('add_ingredient') }}" target="_blank">Add New Ingredient</a>
+                    </p>
+                </div>
+            </div>
+
+            <div class="ingredients-scroll-container" style="max-height: 320px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fafafa;">
+                {% set ingredient_list = all_ingredients if all_ingredients is defined else ingredients %}
+                {% for ingredient in ingredient_list %}
+                    {% set ing_id = ingredient['IngredientID'] %}
+                    
+                    {# Dictionary & List-based check dynamic handling #}
+                    {% if current_ingredients is defined and current_ingredients is mapping %}
+                        {% set is_selected = ing_id in current_ingredients %}
+                        {% set qty = current_ingredients[ing_id]['quantity'] if is_selected else '' %}
+                        {% set unt = current_ingredients[ing_id]['unit'] if is_selected else '' %}
+                    {% else %}
+                        {% set is_selected = ing_id in existing_ingredient_ids if existing_ingredient_ids is defined else false %}
+                        {% set qty = '' %}
+                        {% set unt = '' %}
+                    {% endif %}
+
+                    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px; background: #ffffff; padding: 8px 12px; border-radius: 6px; border: 1px solid #edf2f7;">
+                        <!-- Checkbox -->
+                        <input 
+                            type="checkbox" 
+                            id="ing_{{ ing_id }}" 
+                            name="ingredients" 
+                            value="{{ ing_id }}" 
+                            {% if is_selected %}checked{% endif %}
+                        >
+                        
+                        <!-- Label -->
+                        <label for="ing_{{ ing_id }}" style="flex: 1; cursor: pointer; margin: 0; font-weight: 500;">
+                            {{ ingredient['Name'] }}
+                        </label>
+
+                        <!-- Quantity Input -->
+                        <input 
+                            type="text" 
+                            name="quantity_{{ ing_id }}" 
+                            value="{{ qty }}" 
+                            placeholder="Qty (e.g. 2)" 
+                            style="width: 110px; margin: 0; padding: 6px 10px; font-size: 0.9rem;"
+                            oninput="if(this.value.trim() !== '') { document.getElementById('ing_{{ ing_id }}').checked = true; }"
+                        >
+                        
+                        <!-- Unit Input -->
+                        <input 
+                            type="text" 
+                            name="unit_{{ ing_id }}" 
+                            value="{{ unt }}" 
+                            placeholder="Unit (g/tsp)" 
+                            style="width: 100px; margin: 0; padding: 6px 10px; font-size: 0.9rem;"
+                            oninput="if(this.value.trim() !== '') { document.getElementById('ing_{{ ing_id }}').checked = true; }"
+                        >
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+
+        <!-- =========================
+             INSTRUCTIONS
+        ========================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>👨‍🍳</span>
+                <div>
+                    <h2>Cooking Instructions</h2>
+                    <p>Update step-by-step instructions for preparing this recipe.</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <textarea 
+                    id="instructions" 
+                    name="instructions" 
+                    rows="8" 
+                    placeholder="1. Prepare all ingredients..." 
+                    required
+                >{{ recipe['Instructions'] }}</textarea>
+            </div>
+        </div>
+
+
+        <!-- =========================
+             NUTRITION INFORMATION
+        ========================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>🥗</span>
+                <div>
+                    <h2>Nutrition Information</h2>
+                    <p>Update the nutritional values per serving.</p>
+                </div>
+            </div>
+
+            <div class="form-three-column">
+                <!-- CALORIES -->
+                <div class="form-group">
+                    <label for="calories">Calories</label>
+                    <input 
+                        type="number" 
+                        id="calories" 
+                        name="calories" 
+                        step="0.1" 
+                        min="0" 
+                        value="{{ nutrition['Calories'] if nutrition else 0 }}"
+                    >
+                    <small>kcal</small>
+                </div>
+
+                <!-- PROTEIN -->
+                <div class="form-group">
+                    <label for="protein">Protein</label>
+                    <input 
+                        type="number" 
+                        id="protein" 
+                        name="protein" 
+                        step="0.1" 
+                        min="0" 
+                        value="{{ nutrition['Protein'] if nutrition else 0 }}"
+                    >
+                    <small>grams</small>
+                </div>
+
+                <!-- CARBS -->
+                <div class="form-group">
+                    <label for="carbohydrates">Carbohydrates</label>
+                    <input 
+                        type="number" 
+                        id="carbohydrates" 
+                        name="carbohydrates" 
+                        step="0.1" 
+                        min="0" 
+                        value="{{ nutrition['Carbohydrates'] if nutrition else 0 }}"
+                    >
+                    <small>grams</small>
+                </div>
+
+                <!-- FAT -->
+                <div class="form-group">
+                    <label for="fat">Fat</label>
+                    <input 
+                        type="number" 
+                        id="fat" 
+                        name="fat" 
+                        step="0.1" 
+                        min="0" 
+                        value="{{ nutrition['Fat'] if nutrition else 0 }}"
+                    >
+                    <small>grams</small>
+                </div>
+
+                <!-- FIBER -->
+                <div class="form-group">
+                    <label for="fiber">Fiber</label>
+                    <input 
+                        type="number" 
+                        id="fiber" 
+                        name="fiber" 
+                        step="0.1" 
+                        min="0" 
+                        value="{{ nutrition['Fiber'] if nutrition else 0 }}"
+                    >
+                    <small>grams</small>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- =========================
+             RECIPE IMAGE
+        ========================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>🖼️</span>
+                <div>
+                    <h2>Recipe Image</h2>
+                    <p>Upload a new photo or pass an image URL.</p>
+                </div>
+            </div>
+
+            {% if recipe['ImageURL'] %}
+                <div style="margin-bottom: 20px;">
+                    <p style="font-weight: 500; margin-bottom: 8px;">Current Image:</p>
+                    <img 
+                        src="{{ recipe['ImageURL'] }}" 
+                        alt="Current Recipe Image" 
+                        style="max-width: 220px; max-height: 160px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0;"
+                    >
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="image_file">Option 1: Upload New Image from PC</label>
+                <input type="file" id="image_file" name="image_file" accept="image/*">
+            </div>
+
+            <p style="margin: 12px 0; font-weight: 600; color: #718096; text-align: center;">-- OR --</p>
+
+            <div class="form-group">
+                <label for="image_url">Option 2: Image URL (Internet Link)</label>
+                <input 
+                    type="text" 
+                    id="image_url" 
+                    name="image_url" 
+                    value="{{ recipe['ImageURL'] }}" 
+                    placeholder="https://example.com/image.jpg"
+                >
+            </div>
+        </div>
+
+
+        <!-- SUBMIT BUTTON -->
+        <div style="margin-top: 30px; text-align: right;">
+            <button type="submit" class="btn btn-primary btn-lg">Update Recipe</button>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

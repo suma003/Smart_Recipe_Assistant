@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}
+My Preferences - Smart Recipe Assistant
+{% endblock %}
+
+{% block content %}
+
+<div class="container preferences-page">
+
+    <!-- PAGE HEADER -->
+    <div class="preferences-header">
+        <div>
+            <span class="preferences-label">
+                ⚙️ PERSONALIZATION
+            </span>
+            <h1>
+                My Food Preferences
+            </h1>
+            <p>
+                Tell us what you like so we can personalize your recipe recommendations.
+            </p>
+        </div>
+
+        <div class="preferences-icon">
+            🧠
+        </div>
+    </div>
+
+    <!-- FLASH NOTIFICATION ALERT -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-success" style="padding: 12px 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 6px; margin-bottom: 20px; font-weight: bold;">
+                    ✅ {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- PREFERENCE FORM -->
+    <form method="POST" action="{{ url_for('preferences') }}" class="preferences-form">
+
+        <!-- TASTE PREFERENCE (SPICE LEVEL) -->
+        <div class="preference-section">
+            <div class="preference-title">
+                <span>🌶️</span>
+                <div>
+                    <h2>Taste Preference</h2>
+                    <p>Choose your preferred spice level.</p>
+                </div>
+            </div>
+
+            <div class="preference-options">
+                <label class="preference-option">
+                    <input type="radio" name="spice_level" value="Mild"
+                        {% if preferences and preferences["SpiceLevel"] == "Mild" %}checked{% endif %}>
+                    <div class="preference-option-content">
+                        <span class="option-icon">🌿</span>
+                        <strong>Mild</strong>
+                        <small>Light and less spicy</small>
+                    </div>
+                </label>
+
+                <label class="preference-option">
+                    <input type="radio" name="spice_level" value="Medium"
+                        {% if not preferences or preferences["SpiceLevel"] == "Medium" %}checked{% endif %}>
+                    <div class="preference-option-content">
+                        <span class="option-icon">🌶️</span>
+                        <strong>Medium</strong>
+                        <small>Balanced spice level</small>
+                    </div>
+                </label>
+
+                <label class="preference-option">
+                    <input type="radio" name="spice_level" value="Spicy"
+                        {% if preferences and preferences["SpiceLevel"] == "Spicy" %}checked{% endif %}>
+                    <div class="preference-option-content">
+                        <span class="option-icon">🔥</span>
+                        <strong>Spicy</strong>
+                        <small>Hot and spicy</small>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- DIET PREFERENCE -->
+        <div class="preference-section">
+            <div class="preference-title">
+                <span>🥗</span>
+                <div>
+                    <h2>Diet Preference</h2>
+                    <p>Choose your preferred food type.</p>
+                </div>
+            </div>
+
+            <div class="preference-select-wrapper">
+                <label for="diet_type">Diet Type</label>
+                <select name="diet_type" id="diet_type">
+                    <option value="Regular" {% if not preferences or preferences["DietType"] == "Regular" %}selected{% endif %}>🍽️ Regular</option>
+                    <option value="Vegetarian" {% if preferences and preferences["DietType"] == "Vegetarian" %}selected{% endif %}>🥬 Vegetarian</option>
+                    <option value="Vegan" {% if preferences and preferences["DietType"] == "Vegan" %}selected{% endif %}>🌱 Vegan</option>
+                    <option value="Keto" {% if preferences and preferences["DietType"] == "Keto" %}selected{% endif %}>🥑 Keto</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- COOKING TIME -->
+        <div class="preference-section">
+            <div class="preference-title">
+                <span>⏱️</span>
+                <div>
+                    <h2>Cooking Time</h2>
+                    <p>Choose the maximum time you normally want to spend cooking.</p>
+                </div>
+            </div>
+
+            <div class="time-options">
+                <label class="time-option">
+                    <input type="radio" name="max_cooking_time" value="15"
+                        {% if preferences and preferences["MaxCookingTime"] == 15 %}checked{% endif %}>
+                    <strong>⚡ 15 min</strong>
+                    <small>Quick meals</small>
+                </label>
+
+                <label class="time-option">
+                    <input type="radio" name="max_cooking_time" value="30"
+                        {% if not preferences or preferences["MaxCookingTime"] == 30 %}checked{% endif %}>
+                    <strong>🍳 30 min</strong>
+                    <small>Everyday cooking</small>
+                </label>
+
+                <label class="time-option">
+                    <input type="radio" name="max_cooking_time" value="45"
+                        {% if preferences and preferences["MaxCookingTime"] == 45 %}checked{% endif %}>
+                    <strong>🥘 45 min</strong>
+                    <small>Standard recipes</small>
+                </label>
+
+                <label class="time-option">
+                    <input type="radio" name="max_cooking_time" value="60"
+                        {% if preferences and preferences["MaxCookingTime"] == 60 %}checked{% endif %}>
+                    <strong>🕐 60 min</strong>
+                    <small>More cooking time</small>
+                </label>
+
+                <!-- 🟢 নতুন অপশন: 90 min -->
+                <label class="time-option">
+                    <input type="radio" name="max_cooking_time" value="90"
+                        {% if preferences and preferences["MaxCookingTime"] == 90 %}checked{% endif %}>
+                    <strong>⏳ 90 min</strong>
+                    <small>Slow cooking</small>
+                </label>
+
+                <!-- 🟢 নতুন অপশন: 120 min -->
+                <label class="time-option">
+                    <input type="radio" name="max_cooking_time" value="120"
+                        {% if preferences and preferences["MaxCookingTime"] == 120 %}checked{% endif %}>
+                    <strong>🍲 120 min</strong>
+                    <small>Long recipes</small>
+                </label>
+            </div>
+        </div>
+
+        <!-- DIFFICULTY PREFERENCE -->
+        <div class="preference-section">
+            <div class="preference-title">
+                <span>📊</span>
+                <div>
+                    <h2>Difficulty Preference</h2>
+                    <p>Choose the type of recipes you prefer.</p>
+                </div>
+            </div>
+
+            <div class="difficulty-options">
+                <label class="difficulty-option">
+                    <input type="radio" name="difficulty" value="Easy"
+                        {% if not preferences or preferences["DifficultyPreference"] == "Easy" %}checked{% endif %}>
+                    <span>😊</span>
+                    <strong>Easy</strong>
+                </label>
+
+                <label class="difficulty-option">
+                    <input type="radio" name="difficulty" value="Medium"
+                        {% if preferences and preferences["DifficultyPreference"] == "Medium" %}checked{% endif %}>
+                    <span>🙂</span>
+                    <strong>Medium</strong>
+                </label>
+
+                <label class="difficulty-option">
+                    <input type="radio" name="difficulty" value="Hard"
+                        {% if preferences and preferences["DifficultyPreference"] == "Hard" %}checked{% endif %}>
+                    <span>👨‍🍳</span>
+                    <strong>Hard</strong>
+                </label>
+            </div>
+        </div>
+
+        <!-- CALORIE PREFERENCE -->
+        <div class="preference-section">
+            <div class="preference-title">
+                <span>🔥</span>
+                <div>
+                    <h2>Calorie Preference</h2>
+                    <p>Choose a general calorie preference for recipe recommendations.</p>
+                </div>
+            </div>
+
+            <div class="preference-select-wrapper">
+                <label for="calorie_preference">Calorie Preference</label>
+                <select name="calorie_preference" id="calorie_preference">
+                    <option value="Low Calorie" {% if preferences and preferences["CaloriePreference"] == "Low Calorie" %}selected{% endif %}>🥗 Low Calorie</option>
+                    <option value="Moderate" {% if not preferences or preferences["CaloriePreference"] == "Moderate" %}selected{% endif %}>🍲 Moderate</option>
+                    <option value="High Protein" {% if preferences and preferences["CaloriePreference"] == "High Protein" %}selected{% endif %}>🥩 High Protein</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- SAVE BUTTON SECTION -->
+        <div class="preferences-save">
+            <div>
+                <strong>🧠 Personalization is ready</strong>
+                <p>Your preferences will be used to improve your recipe recommendations.</p>
+            </div>
+
+            <button type="submit" class="save-button">
+                💾 Save Preferences
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

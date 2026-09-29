@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}
+Smart Recommendations - Smart Recipe Assistant
+{% endblock %}
+
+{% block content %}
+
+<div class="container recommendation-page">
+
+    <!-- =========================
+         PAGE HEADER
+    ========================== -->
+    <div class="recommendation-header">
+        <div>
+            <span class="recommendation-label">
+                🧠 AI-POWERED
+            </span>
+            <h1>Smart Recommendations</h1>
+            <p>Personalized recipes based on your preferences, ingredients, and cooking needs.</p>
+        </div>
+    </div>
+
+    <!-- =========================
+         AVAILABLE INGREDIENTS
+    ========================== -->
+    <div class="available-ingredients-card">
+        <div class="section-heading">
+            <div class="section-heading-icon">🥕</div>
+            <div>
+                <h2>Your Available Ingredients</h2>
+                <p>Recipes are matched with the ingredients you currently have.</p>
+            </div>
+        </div>
+
+        {% if available_ingredients %}
+        <div class="ingredient-pills">
+            {% for ingredient in available_ingredients %}
+            <span class="ingredient-pill">
+                ✓ {{ ingredient }}
+            </span>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="recommendation-empty-ingredients">
+            <p>You haven't selected your available ingredients yet.</p>
+            <a href="{{ url_for('my_ingredients') }}" class="btn btn-primary">
+                🥕 Select Ingredients
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- =========================
+         FILTERS
+    ========================== -->
+    <div class="recommendation-filter-card">
+        <div class="section-heading">
+            <div class="section-heading-icon">🔎</div>
+            <div>
+                <h2>Recommendation Filters</h2>
+                <p>Narrow down recipes based on your preferences.</p>
+            </div>
+        </div>
+
+        <form method="GET" action="{{ url_for('recommendations') }}" class="recommendation-filter-form">
+
+            <!-- MEAL TYPE -->
+            <div class="form-group">
+                <label>🍽 Meal Type</label>
+                <select name="meal_type">
+                    <option value="">All Meal Types</option>
+                    {% for meal in meal_types %}
+                    <option value="{{ meal['MealTypeID'] if meal['MealTypeID'] is defined else meal }}"
+                        {% if selected_meal_type == (meal['MealTypeID']|string if meal['MealTypeID'] is defined else meal|string) %} selected {% endif %}>
+                        {{ meal['Name'] if meal['Name'] is defined else meal }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- CUISINE -->
+            <div class="form-group">
+                <label>🌎 Cuisine</label>
+                <select name="cuisine">
+                    <option value="">All Cuisines</option>
+                    {% for cuisine in cuisines %}
+                    <option value="{{ cuisine['CuisineID'] if cuisine['CuisineID'] is defined else cuisine }}"
+                        {% if selected_cuisine == (cuisine['CuisineID']|string if cuisine['CuisineID'] is defined else cuisine|string) %} selected {% endif %}>
+                        {{ cuisine['Name'] if cuisine['Name'] is defined else cuisine }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- DIFFICULTY -->
+            <div class="form-group">
+                <label>📊 Difficulty</label>
+                <select name="difficulty">
+                    <option value="">All Levels</option>
+                    <option value="Easy" {% if selected_difficulty == "Easy" %} selected {% endif %}>Easy</option>
+                    <option value="Medium" {% if selected_difficulty == "Medium" %} selected {% endif %}>Medium</option>
+                    <option value="Hard" {% if selected_difficulty == "Hard" %} selected {% endif %}>Hard</option>
+                </select>
+            </div>
+
+            <!-- TIME -->
+            <div class="form-group">
+                <label>⏱ Maximum Time</label>
+                <select name="max_time">
+                    <option value="">Any Time</option>
+                    <option value="15" {% if selected_max_time == "15" %} selected {% endif %}>15 minutes</option>
+                    <option value="30" {% if selected_max_time == "30" %} selected {% endif %}>30 minutes</option>
+                    <option value="60" {% if selected_max_time == "60" %} selected {% endif %}>60 minutes</option>
+                </select>
+            </div>
+
+            <div class="recommendation-filter-actions">
+                <button type="submit" class="btn btn-primary">
+                    🔍 Find Recipes
+                </button>
+                <a href="{{ url_for('recommendations') }}" class="btn btn-secondary">
+                    Reset
+                </a>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- =========================
+         RESULTS HEADER
+    ========================== -->
+    <div class="recommendation-results-header">
+        <div>
+            <h2>Recommended For You</h2>
+            <p>{{ recommendations|length }} recipes found</p>
+        </div>
+        <div class="recommendation-info">
+            <span>🧠 Personalized Ranking</span>
+        </div>
+    </div>
+
+    <!-- =========================
+         RECIPE RESULTS
+    ========================== -->
+    {% if recommendations %}
+
+    <div class="recommendation-grid">
+
+        {% for item in recommendations %}
+        
+        {# Safely resolve values if recipe is nested or flat #}
+        {% set recipe = item["recipe"] if item["recipe"] is defined else item %}
+        {% set recipe_id = recipe["RecipeID"] if recipe["RecipeID"] is defined else item["RecipeID"] %}
+        {% set title = recipe["Title"] if recipe["Title"] is defined else item["Title"] %}
+        {% set image_url = recipe["ImageURL"] if recipe["ImageURL"] is defined else item["ImageURL"] %}
+        {% set description = recipe["Description"] if recipe["Description"] is defined else item["Description"] %}
+        {% set cooking_time = recipe["CookingTime"] if recipe["CookingTime"] is defined else item["CookingTime"] %}
+        {% set difficulty = recipe["Difficulty"] if recipe["Difficulty"] is defined else item["Difficulty"] %}
+        {% set spice_level = recipe["SpiceLevel"] if recipe["SpiceLevel"] is defined else item["SpiceLevel"] %}
+        {% set score = item["score"] | default(0) %}
+
+        <div class="recommendation-card">
+
+            <!-- IMAGE -->
+            {% if image_url %}
+            <img src="{{ image_url }}" alt="{{ title }}" class="recommendation-image">
+            {% else %}
+            <div class="recommendation-placeholder">🍲</div>
+            {% endif %}
+
+            <div class="recommendation-card-body">
+
+                <!-- TITLE & MATCH BADGE -->
+                <div class="recommendation-title-row">
+                    <h3>{{ title }}</h3>
+
+                    <div class="match-score 
+                        {% if score >= 70 %} match-high 
+                        {% elif score >= 40 %} match-medium 
+                        {% else %} match-low {% endif %}">
+                        <strong>{{ score }}%</strong>
+                        <small>Match</small>
+                    </div>
+                </div>
+
+                <!-- SCORE PROGRESS BAR -->
+                <div class="score-bar" style="width: 100%; height: 10px; background: #eee; border-radius: 10px; overflow: hidden; margin: 10px 0;">
+                    <div class="score-fill" style="width: {{ score }}%; height: 100%; background: linear-gradient(90deg, #f39c12, #2ecc71); transition: width 0.5s ease-in-out;"></div>
+                </div>
+
+                <!-- DESCRIPTION -->
+                {% if description %}
+                <p class="recommendation-description">
+                    {{ description[:130] }}{% if description|length > 130 %}...{% endif %}
+                </p>
+                {% endif %}
+
+                <!-- META DETAILS -->
+                <div class="recommendation-meta">
+                    {% if cooking_time %}<span>⏱ {{ cooking_time }} min</span>{% endif %}
+                    {% if difficulty %}<span>📊 {{ difficulty }}</span>{% endif %}
+                    {% if spice_level %}<span>🌶 {{ spice_level }}</span>{% endif %}
+                </div>
+
+                <!-- SCORE EXPLANATION & BREAKDOWN -->
+                <div class="match-details" style="background: #f9f9f9; padding: 12px; border-radius: 8px; border-left: 4px solid #3498db; margin-top: 12px;">
+                    <h4 style="margin: 0 0 8px 0; font-size: 0.95rem; color: #2c3e50;">Why this recipe?</h4>
+
+                    <div class="match-items" style="display: flex; flex-direction: column; gap: 4px;">
+                        {% if item["ingredient_percentage"] is defined %}
+                        <span class="match-item">🧪 Ingredient Match: <strong>{{ item["ingredient_percentage"] }}%</strong></span>
+                        {% endif %}
+
+                        {% if item["matched_count"] is defined and item["matched_count"] > 0 %}
+                        <span class="match-item success">✓ {{ item["matched_count"] }} ingredients matched</span>
+                        {% endif %}
+
+                        {% if item["missing_count"] is defined and item["missing_count"] > 0 %}
+                        <span class="match-item warning">⚠ {{ item["missing_count"] }} ingredients missing</span>
+                        {% endif %}
+
+                        {% if item["average_rating"] is defined %}
+                        <span class="match-item">⭐ Rating: <strong>{{ item["average_rating"] }} / 5</strong></span>
+                        {% endif %}
+
+                        <span class="match-item">
+                            🎯 Recommendation Score: <strong>{{ score }} / 100</strong> 
+                            {% if score >= 70 %}(High Match)
+                            {% elif score >= 40 %}(Medium Match)
+                            {% else %}(Low Match){% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- ACTIONS -->
+                <div class="recommendation-actions" style="margin-top: 15px;">
+                    <a href="{{ url_for('recipe_detail', recipe_id=recipe_id) }}" class="btn btn-primary">
+                        View Recipe →
+                    </a>
+
+                    {% if item["missing_count"] is defined and item["missing_count"] > 0 %}
+                    <a href="{{ url_for('add_missing_to_shopping_list', recipe_id=recipe_id) }}" class="btn btn-outline">
+                        🛒 Missing Ingredients
+                    </a>
+                    {% endif %}
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <!-- EMPTY STATE -->
+    <div class="recommendation-empty">
+        <div class="empty-icon">🥣</div>
+        <h2>No matching recipes found</h2>
+        <p>Try changing your filters or selecting more available ingredients.</p>
+        <a href="{{ url_for('recipes') }}" class="btn btn-primary">
+            Browse All Recipes
+        </a>
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Recipe Assistant{% endblock %}</title>
+    
+    <!-- Main Style -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Font Awesome Icons (Optional, for better icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Page-specific extra <link>/<style> tags -->
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <h2>
+            <a href="{{ url_for('dashboard') if session.get('user_id') else url_for('login') }}"
+               style="text-decoration: none; color: inherit;">
+                🍲 Smart Recipe Assistant
+            </a>
+        </h2>
+
+        <div class="nav-links">
+            {% if session.get('user_id') %}
+                <!-- LOGGED-IN NAVIGATION -->
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('recipes') }}">Recipes</a>
+                <a href="{{ url_for('my_recipes') }}">My Recipes</a>
+                <a href="{{ url_for('my_ingredients') }}">My Ingredients</a>
+                <a href="{{ url_for('recommendations') }}">Recommendations</a>
+                <a href="{{ url_for('favorites') }}">Favorites</a>
+                <a href="{{ url_for('shopping_list') }}">Shopping List</a>
+                <a href="{{ url_for('preferences') }}">Preferences</a>
+
+                <!-- ADMIN ONLY LINKS -->
+                {% if session.get('user_role') == 'Admin' %}
+                    <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
+                {% endif %}
+
+                <a href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+                <!-- LOGGED-OUT NAVIGATION -->
+                <a href="{{ url_for('login') }}">Login</a>
+                <a href="{{ url_for('register') }}">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-container" style="max-width: 1100px; margin: 15px auto; padding: 0 15px;">
+                {% for message in messages %}
+                    <div class="alert-success" style="padding: 12px 18px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 6px; margin-bottom: 10px;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+
+    <!-- PAGE CONTENT -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        <p>&copy; 2026 Smart Recipe Assistant &mdash; University Web Engineering Project</p>
+    </footer>
+
+    <!-- Page-specific extra scripts -->
+    {% block extra_scripts %}{% endblock %}
+
+</body>
+
+</html>

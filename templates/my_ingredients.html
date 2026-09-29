@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>My Ingredients</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/style.css'
+        ) }}"
+    >
+
+</head>
+
+<body>
+
+<nav class="navbar">
+
+    <h2>
+        Smart Recipe Assistant
+    </h2>
+
+    <div>
+
+        <a href="{{ url_for('dashboard') }}">
+            Dashboard
+        </a>
+
+        &nbsp;
+
+        <a href="{{ url_for('recipes') }}">
+            Recipes
+        </a>
+
+        &nbsp;
+
+        <a href="{{ url_for('logout') }}">
+            Logout
+        </a>
+
+    </div>
+
+</nav>
+
+
+<div class="dashboard">
+
+    <h1>
+        🥕 My Available Ingredients
+    </h1>
+
+    <p>
+        Select the ingredients currently available in your kitchen and specify their quantities.
+    </p>
+
+
+    <form
+        method="POST"
+        action="{{ url_for('my_ingredients') }}"
+    >
+
+        <div class="ingredient-grid" style="display: flex; flex-direction: column; gap: 12px;">
+
+            {% for ingredient in ingredients %}
+
+                <div class="ingredient-item" style="display: flex; align-items: center; gap: 10px;">
+
+                    <label style="min-width: 180px; display: flex; align-items: center; gap: 8px;">
+
+                        <input
+                            type="checkbox"
+                            name="ingredients"
+                            value="{{ ingredient['IngredientID'] }}"
+                            id="ing_{{ ingredient['IngredientID'] }}"
+                        >
+
+                        <span>{{ ingredient["Name"] }}</span>
+
+                    </label>
+
+                    <!-- Quantity Input Field -->
+                    <input 
+                        type="number" 
+                        step="any" 
+                        name="quantity_{{ ingredient['IngredientID'] }}" 
+                        placeholder="Qty" 
+                        style="width: 90px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;"
+                    >
+
+                    <!-- Unit Input Field -->
+                    <input 
+                        type="text" 
+                        name="unit_{{ ingredient['IngredientID'] }}" 
+                        placeholder="Unit (e.g. g, pcs)" 
+                        style="width: 120px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;"
+                    >
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+
+        <br>
+
+        <button type="submit">
+            🤖 Find Matching Recipes
+        </button>
+
+    </form>
+
+</div>
+
+</body>
+
+</html>

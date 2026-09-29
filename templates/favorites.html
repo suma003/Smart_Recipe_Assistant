@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Favorite Recipes</title>
+</head>
+<body>
+    <h1>My Favorite Recipes</h1>
+    <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+    <hr>
+
+    {% if recipes %}
+        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+            {% for recipe in recipes %}
+                <div style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 250px;">
+                    {% if recipe.ImageURL %}
+                        <img src="{{ recipe.ImageURL }}" alt="{{ recipe.Title }}" style="width: 100%; height: 150px; object-fit: cover;">
+                    {% endif %}
+                    <h3>{{ recipe.Title }}</h3>
+                    <p>{{ recipe.Description }}</p>
+                    <p><strong>Cuisine:</strong> {{ recipe.Cuisine }}</p>
+                    <p><strong>Cooking Time:</strong> {{ recipe.CookingTime }} mins</p>
+                    <a href="{{ url_for('recipe_detail', recipe_id=recipe.RecipeID) }}">View Recipe</a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>You have not added any favorite recipes yet.</p>
+    {% endif %}
+</body>
+</html>

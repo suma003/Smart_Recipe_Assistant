@@ -1,0 +1,561 @@
+```html
+{% extends "base.html" %}
+
+{% block title %}
+Dashboard - Smart Recipe Assistant
+{% endblock %}
+
+
+{% block content %}
+
+<div class="container">
+
+    <!-- =====================================================
+         WELCOME SECTION
+         ===================================================== -->
+
+    <div class="section">
+
+        <h1>
+            👋 Welcome, {{ session["user_name"] }}!
+        </h1>
+
+        <p>
+            Discover recipes, get personalized recommendations
+            and manage your ingredients.
+        </p>
+
+    </div>
+
+
+    <!-- =====================================================
+         STATISTICS
+         ===================================================== -->
+
+    <div class="stats-grid">
+
+        <!-- My Recipes -->
+
+        <div class="stat-card">
+
+            <div class="stat-label">
+                🍲 My Recipes
+            </div>
+
+            <div class="stat-number">
+                {{ total_recipes }}
+            </div>
+
+        </div>
+
+
+        <!-- Favorites -->
+
+        <div class="stat-card">
+
+            <div class="stat-label">
+                ❤️ Favorites
+            </div>
+
+            <div class="stat-number">
+                {{ total_favorites }}
+            </div>
+
+        </div>
+
+
+        <!-- Ratings -->
+
+        <div class="stat-card">
+
+            <div class="stat-label">
+                ⭐ Ratings
+            </div>
+
+            <div class="stat-number">
+                {{ total_ratings }}
+            </div>
+
+        </div>
+
+
+        <!-- Comments -->
+
+        <div class="stat-card">
+
+            <div class="stat-label">
+                💬 Comments
+            </div>
+
+            <div class="stat-number">
+                {{ total_comments }}
+            </div>
+
+        </div>
+
+
+        <!-- Shopping Lists -->
+
+        <div class="stat-card">
+
+            <div class="stat-label">
+                🛒 Shopping Lists
+            </div>
+
+            <div class="stat-number">
+                {{ total_shopping_lists }}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         QUICK ACTIONS
+         ===================================================== -->
+
+    <div class="section">
+
+        <div class="section-header">
+
+            <h2>
+                ⚡ Quick Actions
+            </h2>
+
+        </div>
+
+
+        <div class="quick-actions">
+
+            <!-- Add Recipe -->
+
+            <a
+                href="{{ url_for('add_recipe') }}"
+                class="action-button"
+            >
+                ➕ Add Recipe
+            </a>
+
+
+            <!-- Find Recipes -->
+
+            <a
+                href="{{ url_for('recipes') }}"
+                class="action-button"
+            >
+                🔍 Find Recipes
+            </a>
+
+
+            <!-- My Ingredients -->
+
+            <a
+                href="{{ url_for('my_ingredients') }}"
+                class="action-button"
+            >
+                🥕 My Ingredients
+            </a>
+
+
+            <!-- Recommendations -->
+
+            <a
+                href="{{ url_for('recommendations') }}"
+                class="action-button"
+            >
+                🤖 Recommendations
+            </a>
+
+
+            <!-- Shopping List -->
+
+            <a
+                href="{{ url_for('shopping_list') }}"
+                class="action-button"
+            >
+                🛒 Shopping List
+            </a>
+
+
+            <!-- Preferences -->
+
+            <a
+                href="{{ url_for('preferences') }}"
+                class="action-button"
+            >
+                ⚙️ Preferences
+            </a>
+
+
+            <!-- Admin -->
+
+            {% if session.get("user_role") == "Admin" %}
+
+            <a
+                href="{{ url_for('admin_dashboard') }}"
+                class="action-button"
+            >
+                🛠️ Admin Dashboard
+            </a>
+
+
+            <a
+                href="{{ url_for('admin_users') }}"
+                class="action-button"
+            >
+                👤 Manage Users
+            </a>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         MY RECENT RECIPES
+         ===================================================== -->
+
+    <div class="section">
+
+        <div class="section-header">
+
+            <h2>
+                🍲 My Recent Recipes
+            </h2>
+
+
+            <a
+                href="{{ url_for('recipes') }}"
+                class="btn"
+            >
+                View All
+            </a>
+
+        </div>
+
+
+        <div class="recipe-grid">
+
+            {% for recipe in my_recipes %}
+
+            <div class="recipe-card">
+
+
+                <!-- Recipe Image -->
+
+                {% if recipe["ImageURL"] %}
+
+                    <img
+                        src="{{ recipe['ImageURL'] }}"
+                        alt="{{ recipe['Title'] }}"
+                    >
+
+                {% endif %}
+
+
+                <!-- Recipe Content -->
+
+                <div class="recipe-card-content">
+
+                    <h3>
+                        {{ recipe["Title"] }}
+                    </h3>
+
+
+                    {% if recipe["Description"] %}
+
+                    <p>
+                        {{ recipe["Description"][:100] }}
+
+                        {% if recipe["Description"]|length > 100 %}
+                            ...
+                        {% endif %}
+
+                    </p>
+
+                    {% else %}
+
+                    <p>
+                        No description available.
+                    </p>
+
+                    {% endif %}
+
+
+                    <!-- Recipe Meta -->
+
+                    <div class="recipe-meta">
+
+                        <span class="badge">
+                            ⏱ {{ recipe["CookingTime"] }} min
+                        </span>
+
+
+                        <span class="badge">
+                            {{ recipe["Difficulty"] }}
+                        </span>
+
+                    </div>
+
+
+                    <!-- View Recipe -->
+
+                    <a
+                        href="{{ url_for(
+                            'recipe_detail',
+                            recipe_id=recipe['RecipeID']
+                        ) }}"
+                        class="btn"
+                    >
+                        View Recipe →
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            {% else %}
+
+            <!-- No Recipe -->
+
+            <div class="card">
+
+                <h3>
+                    🍲 No Recipes Yet
+                </h3>
+
+                <p>
+                    You haven't created any recipes yet.
+                    Start sharing your favorite recipes.
+                </p>
+
+                <br>
+
+                <a
+                    href="{{ url_for('add_recipe') }}"
+                    class="btn"
+                >
+                    ➕ Create Your First Recipe
+                </a>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FAVORITE RECIPES
+         ===================================================== -->
+
+    <div class="section">
+
+        <div class="section-header">
+
+            <h2>
+                ❤️ My Favorite Recipes
+            </h2>
+
+
+            <a
+                href="{{ url_for('favorites') }}"
+                class="btn"
+            >
+                View Favorites
+            </a>
+
+        </div>
+
+
+        <div class="recipe-grid">
+
+            {% if favorite_recipes %}
+
+                {% for recipe in favorite_recipes %}
+
+                <div class="recipe-card">
+
+                    {% if recipe["ImageURL"] %}
+
+                    <img
+                        src="{{ recipe['ImageURL'] }}"
+                        alt="{{ recipe['Title'] }}"
+                    >
+
+                    {% endif %}
+
+
+                    <div class="recipe-card-content">
+
+                        <h3>
+                            {{ recipe["Title"] }}
+                        </h3>
+
+
+                        {% if recipe["Description"] %}
+
+                        <p>
+                            {{ recipe["Description"][:100] }}
+
+                            {% if recipe["Description"]|length > 100 %}
+                                ...
+                            {% endif %}
+
+                        </p>
+
+                        {% endif %}
+
+
+                        <div class="recipe-meta">
+
+                            <span class="badge">
+                                ⏱ {{ recipe["CookingTime"] }} min
+                            </span>
+
+                            <span class="badge">
+                                {{ recipe["Difficulty"] }}
+                            </span>
+
+                        </div>
+
+
+                        <a
+                            href="{{ url_for(
+                                'recipe_detail',
+                                recipe_id=recipe['RecipeID']
+                            ) }}"
+                            class="btn"
+                        >
+                            View Recipe →
+                        </a>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <div class="card">
+
+                    <h3>
+                        ❤️ No Favorites Yet
+                    </h3>
+
+                    <p>
+                        You haven't added any recipes to your
+                        favorites yet.
+                    </p>
+
+                    <br>
+
+                    <a
+                        href="{{ url_for('recipes') }}"
+                        class="btn"
+                    >
+                        🔍 Explore Recipes
+                    </a>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         RECENT SEARCHES
+         ===================================================== -->
+
+    <div class="section">
+
+        <div class="section-header">
+
+            <h2>
+                🔎 Recent Searches
+            </h2>
+
+        </div>
+
+
+        {% if recent_searches %}
+
+        <ul class="search-list">
+
+            {% for search in recent_searches %}
+
+            <li>
+
+                <span>
+                    🔎 {{ search["SearchText"] }}
+                </span>
+
+                <small>
+                    {{ search["SearchDate"] }}
+                </small>
+
+            </li>
+
+            {% endfor %}
+
+        </ul>
+
+        {% else %}
+
+        <div class="card">
+
+            <p>
+                You haven't searched for any recipes yet.
+            </p>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- =====================================================
+         SMART RECOMMENDATION
+         ===================================================== -->
+
+    <div class="recommendation-box">
+
+        <h2>
+            🤖 Smart Recommendations
+        </h2>
+
+
+        <p>
+            Get personalized recipes based on your ingredients,
+            preferences, cooking time and search history.
+        </p>
+
+
+        <br>
+
+
+        <a
+            href="{{ url_for('recommendations') }}"
+            class="btn"
+        >
+            Get Recommendations →
+        </a>
+
+    </div>
+
+
+</div>
+
+{% endblock %}
+```

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingredient Recommendations</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<nav class="navbar">
+    <h2>Smart Recipe Assistant</h2>
+    <div>
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        &nbsp;
+        <a href="{{ url_for('my_ingredients') }}">My Ingredients</a>
+        &nbsp;
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<div class="dashboard">
+    <h1>🤖 Ingredient-Based Recommendations</h1>
+
+    <h3>Your Available Ingredients</h3>
+    <p>
+        {% for ingredient in selected_ingredients %}
+            <span class="badge">🥕 {{ ingredient["Name"] }}</span>
+        {% else %}
+            <span>No ingredients selected.</span>
+        {% endfor %}
+    </p>
+
+    <hr>
+
+    {% if results %}
+        {% for item in results %}
+            <div class="card">
+                <h2>{{ item["recipe"]["Title"] }}</h2>
+                <p>{{ item["recipe"]["Description"] }}</p>
+
+                <p>🍽️ {{ item["recipe"]["MealType"] }}</p>
+                <p>🌍 {{ item["recipe"]["Cuisine"] }}</p>
+                <p>⏱️ {{ item["recipe"]["CookingTime"] }} minutes</p>
+
+                <h3>🎯 {{ item["match_percentage"] }}% Ingredient Match</h3>
+
+                <p>
+                    Available: {{ item["matched_count"] }} / {{ item["total_ingredients"] }} ingredients
+                </p>
+
+                <!-- MISSING INGREDIENTS -->
+                {% if item["missing"] %}
+                    <h3>🛒 Missing Ingredients</h3>
+                    <ul>
+                        {% for ingredient in item["missing"] %}
+                            <li>
+                                {{ ingredient["Name"] }} — {{ ingredient["Quantity"] }} {{ ingredient["Unit"] }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                    <!-- ADD MISSING INGREDIENTS FORM & BUTTON -->
+                    <form method="POST" action="{{ url_for('add_missing_to_shopping_list', recipe_id=item['recipe']['RecipeID']) }}">
+                        <button type="submit" class="btn btn-primary">
+                            🛒 Add Missing Ingredients
+                        </button>
+                    </form>
+                    <br>
+                {% else %}
+                    <p>🎉 You have all ingredients!</p>
+                {% endif %}
+
+                <a href="{{ url_for('recipe_detail', recipe_id=item['recipe']['RecipeID']) }}">
+                    View Recipe →
+                </a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No recipes found matching your selected ingredients.</p>
+    {% endif %}
+</div>
+
+</body>
+</html>

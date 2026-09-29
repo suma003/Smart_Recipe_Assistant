@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}
+Login - Smart Recipe Assistant
+{% endblock %}
+
+{% block content %}
+
+<div class="auth-page" style="display: flex; justify-content: center; align-items: center; padding: 40px 20px;">
+
+    <div class="auth-card" style="background: #ffffff; padding: 30px 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; text-align: center;">
+
+        <div class="auth-icon" style="font-size: 40px; margin-bottom: 10px;">
+            🍳
+        </div>
+
+        <h1 style="margin-bottom: 5px; font-size: 24px; color: #333;">
+            Welcome Back!
+        </h1>
+
+        <p class="auth-subtitle" style="color: #666; margin-bottom: 25px; font-size: 14px;">
+            Login to your Smart Recipe Assistant
+        </p>
+
+        <form method="POST">
+
+            <!-- EMAIL -->
+            <div class="form-group" style="margin-bottom: 20px; text-align: left;">
+                <label for="email" style="display: block; margin-bottom: 6px; font-weight: bold; font-size: 14px; color: #333;">
+                    📧 Email
+                </label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    required
+                    style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;"
+                >
+            </div>
+
+            <!-- PASSWORD -->
+            <div class="form-group" style="margin-bottom: 25px; text-align: left;">
+                <label for="password" style="display: block; margin-bottom: 6px; font-weight: bold; font-size: 14px; color: #333;">
+                    🔒 Password
+                </label>
+                <div style="position: relative; display: flex; align-items: center;">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        required
+                        style="width: 100%; padding: 10px; padding-right: 40px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;"
+                    >
+                    <i class="fa-solid fa-eye" id="togglePassword" style="position: absolute; right: 12px; cursor: pointer; color: #777;"></i>
+                </div>
+            </div>
+
+            <!-- BUTTON -->
+            <button
+                type="submit"
+                class="auth-button"
+                style="width: 100%; padding: 12px; background-color: #3498db; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;"
+            >
+                Login
+            </button>
+
+        </form>
+
+        <!-- FOOTER -->
+        <div class="auth-footer" style="margin-top: 20px; font-size: 14px; color: #666;">
+            <p style="margin-bottom: 5px;">
+                Don't have an account?
+            </p>
+            <a href="{{ url_for('register') }}" style="color: #3498db; text-decoration: none; font-weight: bold;">
+                Create an account →
+            </a>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- JAVASCRIPT FOR SHOW/HIDE PASSWORD -->
+<script>
+    const togglePassword = document.querySelector('#togglePassword');
+    const password = document.querySelector('#password');
+
+    if (togglePassword && password) {
+        togglePassword.addEventListener('click', function () {
+            // Type toggle (password <-> text)
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            
+            // Icon toggle (eye <-> eye-slash)
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+    }
+</script>
+
+{% endblock %}

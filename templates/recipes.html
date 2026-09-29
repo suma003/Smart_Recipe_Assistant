@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}
+Recipes - Smart Recipe Assistant
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <!-- Page Header -->
+    <div class="recipe-page-header">
+        <div>
+            <h1>🍲 Discover Recipes</h1>
+            <p>Find delicious recipes based on your ingredients, preferences and cooking time.</p>
+        </div>
+
+        <a href="{{ url_for('add_recipe') }}" class="btn">
+            ➕ Add Recipe
+        </a>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="filter-card">
+        <form method="GET" action="{{ url_for('recipes') }}">
+
+            <!-- Row 1: Search Name, Meal Type, Cuisine -->
+            <div class="search-row">
+
+                <!-- Recipe Name Search -->
+                <div class="search-main">
+                    <label for="search">🔍 Search Recipe</label>
+                    <input 
+                        type="text" 
+                        id="search" 
+                        name="search" 
+                        value="{{ selected_search if selected_search else '' }}" 
+                        placeholder="Search by recipe name..."
+                    >
+                </div>
+
+                <!-- Meal Type Filter -->
+                <div>
+                    <label for="meal_type_id">🍽️ Meal Type</label>
+                    <select name="meal_type_id" id="meal_type_id">
+                        <option value="">All Meal Types</option>
+                        {% for meal in meal_types %}
+                            {% set m_id = meal.MealTypeID if meal.MealTypeID is defined else meal['MealTypeID'] %}
+                            {% set m_name = meal.Name if meal.Name is defined else meal['Name'] %}
+                            <option value="{{ m_id }}" {% if selected_meal_type|string == m_id|string %}selected{% endif %}>
+                                {{ m_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Cuisine Filter -->
+                <div>
+                    <label for="cuisine_id">🌍 Cuisine</label>
+                    <select name="cuisine_id" id="cuisine_id">
+                        <option value="">All Cuisines</option>
+                        {% for cuisine in cuisines %}
+                            {% set c_id = cuisine.CuisineID if cuisine.CuisineID is defined else cuisine['CuisineID'] %}
+                            {% set c_name = cuisine.Name if cuisine.Name is defined else cuisine['Name'] %}
+                            <option value="{{ c_id }}" {% if selected_cuisine|string == c_id|string %}selected{% endif %}>
+                                {{ c_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Row 2: Difficulty, Max Cooking Time, Ingredient, Action Buttons -->
+            <div class="search-row">
+
+                <!-- Difficulty Filter -->
+                <div>
+                    <label for="difficulty">📊 Difficulty</label>
+                    <select name="difficulty" id="difficulty">
+                        <option value="">Any Difficulty</option>
+                        <option value="Easy" {% if selected_difficulty == "Easy" %}selected{% endif %}>Easy</option>
+                        <option value="Medium" {% if selected_difficulty == "Medium" %}selected{% endif %}>Medium</option>
+                        <option value="Hard" {% if selected_difficulty == "Hard" %}selected{% endif %}>Hard</option>
+                    </select>
+                </div>
+
+                <!-- Maximum Cooking Time Filter -->
+                <div>
+                    <label for="max_time">⏱️ Max Time (mins)</label>
+                    <select name="max_time" id="max_time">
+                        <option value="">Any Time</option>
+                        <option value="15" {% if selected_max_time|string == "15" %}selected{% endif %}>15 minutes</option>
+                        <option value="30" {% if selected_max_time|string == "30" %}selected{% endif %}>30 minutes</option>
+                        <option value="45" {% if selected_max_time|string == "45" %}selected{% endif %}>45 minutes</option>
+                        <option value="60" {% if selected_max_time|string == "60" %}selected{% endif %}>60 minutes</option>
+                        <option value="120" {% if selected_max_time|string == "120" %}selected{% endif %}>120 minutes</option>
+                    </select>
+                </div>
+
+                <!-- Ingredient Filter -->
+                <div>
+                    <label for="ingredient_id">🥕 Ingredient</label>
+                    <select name="ingredient_id" id="ingredient_id">
+                        <option value="">Any Ingredient</option>
+                        {% for ing in ingredients %}
+                            {% set i_id = ing.IngredientID if ing.IngredientID is defined else ing['IngredientID'] %}
+                            {% set i_name = ing.Name if ing.Name is defined else ing['Name'] %}
+                            {% set sel_ing = selected_ingredient_id if selected_ingredient_id is defined else selected_ingredient %}
+                            <option value="{{ i_id }}" {% if sel_ing|string == i_id|string %}selected{% endif %}>
+                                {{ i_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Filter Action Buttons -->
+                <div class="filter-buttons">
+                    <button type="submit" class="btn">🔍 Search</button>
+                    <a href="{{ url_for('recipes') }}" class="btn btn-secondary">Reset</a>
+                </div>
+
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Result Count Header -->
+    <div class="recipe-result-header">
+        <h2>Available Recipes</h2>
+        <span>{{ recipes|length }} recipe(s) found</span>
+    </div>
+
+    <!-- Recipe Cards Grid -->
+    <div class="recipe-grid">
+
+        {% for recipe in recipes %}
+            {% set r_id = recipe.RecipeID if recipe.RecipeID is defined else recipe['RecipeID'] %}
+            {% set r_title = recipe.Title if recipe.Title is defined else recipe['Title'] %}
+            {% set r_desc = recipe.Description if recipe.Description is defined else recipe['Description'] %}
+            {% set r_img = recipe.ImageURL if recipe.ImageURL is defined else recipe['ImageURL'] %}
+            {% set r_meal = recipe.MealType if recipe.MealType is defined else recipe['MealType'] %}
+            {% set r_cuisine = recipe.Cuisine if recipe.Cuisine is defined else recipe['Cuisine'] %}
+            {% set r_diff = recipe.Difficulty if recipe.Difficulty is defined else recipe['Difficulty'] %}
+            {% set r_time = recipe.CookingTime if recipe.CookingTime is defined else recipe['CookingTime'] %}
+            {% set r_creator = recipe.Creator if recipe.Creator is defined else recipe['Creator'] %}
+
+            <div class="recipe-card">
+
+                <!-- Recipe Image or Default Fallback -->
+                {% if r_img %}
+                    <img src="{{ r_img }}" alt="{{ r_title }}">
+                {% else %}
+                    <img src="{{ url_for('static', filename='images/default_recipe.jpg') }}" alt="Default Recipe Image">
+                {% endif %}
+
+                <div class="recipe-card-content">
+                    <h3>{{ r_title }}</h3>
+
+                    <p class="recipe-description">
+                        {% if r_desc %}
+                            {{ r_desc[:110] }}{% if r_desc|length > 110 %}...{% endif %}
+                        {% else %}
+                            No description available.
+                        {% endif %}
+                    </p>
+
+                    <div class="recipe-meta">
+                        <span class="badge">🍽️ {{ r_meal }}</span>
+                        <span class="badge">🌍 {{ r_cuisine }}</span>
+                        <span class="badge">📊 {{ r_diff }}</span>
+                        <span class="badge">⏱️ {{ r_time }} min</span>
+                    </div>
+
+                    <div class="recipe-card-footer">
+                        <small>👨‍🍳 {{ r_creator }}</small>
+                        <a href="{{ url_for('recipe_detail', recipe_id=r_id) }}" class="btn">
+                            View Recipe →
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+        {% else %}
+
+            <!-- Empty State when no recipes found -->
+            <div class="empty-state">
+                <div class="empty-icon">🔎</div>
+                <h2>No Recipes Found</h2>
+                <p>Try changing your search terms or clearing your filters.</p>
+                <br>
+                <a href="{{ url_for('recipes') }}" class="btn">Show All Recipes</a>
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

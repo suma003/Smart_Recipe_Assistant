@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <h2>Search Results for "{{ query }}"</h2>
+    <hr>
+
+    {% if recipes %}
+        <div class="row g-3">
+            {% for recipe in recipes %}
+                <div class="col-md-4">
+                    <div class="card p-3 shadow-sm mb-3">
+                        <h3>{{ recipe['Title'] }}</h3>
+                        <p>⏱️ {{ recipe['CookingTime'] or 'N/A' }} mins | 📊 {{ recipe['Difficulty'] or 'Normal' }}</p>
+                        <a href="{{ url_for('recipe_detail', recipe_id=recipe['RecipeID']) }}" class="btn btn-primary btn-sm">View Recipe</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">No recipes found matching your query.</p>
+    {% endif %}
+</div>
+{% endblock %}

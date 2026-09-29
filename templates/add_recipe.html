@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}
+Add Recipe - Smart Recipe Assistant
+{% endblock %}
+
+{% block content %}
+
+<div class="container form-container">
+
+    <div class="form-page-header">
+        <div>
+            <h1>➕ Add New Recipe</h1>
+            <p>Share your favorite recipe with the community.</p>
+        </div>
+
+        <a href="{{ url_for('recipes') }}" class="btn btn-secondary">
+            ← Back
+        </a>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="recipe-form">
+
+        <!-- =====================
+             BASIC INFORMATION
+        ====================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>🍲</span>
+                <div>
+                    <h2>Basic Information</h2>
+                    <p>Enter the basic details of your recipe.</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="title">Recipe Title *</label>
+                <input 
+                    type="text" 
+                    id="title" 
+                    name="title" 
+                    placeholder="Example: Chicken Potato Curry" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea 
+                    id="description" 
+                    name="description" 
+                    rows="4" 
+                    placeholder="Describe your recipe..."
+                ></textarea>
+            </div>
+        </div>
+
+        <!-- =====================
+             CATEGORY & CUISINE
+        ====================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>🍽️</span>
+                <div>
+                    <h2>Category & Cuisine</h2>
+                    <p>Choose the appropriate category.</p>
+                </div>
+            </div>
+
+            <div class="form-two-column">
+                <div class="form-group">
+                    <label for="meal_type_id">Meal Type *</label>
+                    <select id="meal_type_id" name="meal_type_id" required>
+                        <option value="" disabled selected>Select Meal Type</option>
+                        {% for meal in meal_types %}
+                            <option value="{{ meal['MealTypeID'] }}">{{ meal['Name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="cuisine_id">Cuisine *</label>
+                    <select id="cuisine_id" name="cuisine_id" required>
+                        <option value="" disabled selected>Select Cuisine</option>
+                        {% for cuisine in cuisines %}
+                            <option value="{{ cuisine['CuisineID'] }}">{{ cuisine['Name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- =====================
+             COOKING DETAILS
+        ====================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>⏱️</span>
+                <div>
+                    <h2>Cooking Details</h2>
+                    <p>Tell users how the recipe should be prepared.</p>
+                </div>
+            </div>
+
+            <div class="form-three-column">
+                <div class="form-group">
+                    <label for="cooking_time">Cooking Time *</label>
+                    <input 
+                        type="number" 
+                        id="cooking_time" 
+                        name="cooking_time" 
+                        min="1" 
+                        placeholder="30" 
+                        required
+                    >
+                    <small>Minutes</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="difficulty">Difficulty *</label>
+                    <select id="difficulty" name="difficulty" required>
+                        <option value="" disabled selected>Select Difficulty</option>
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="spice_level">Spice Level *</label>
+                    <select id="spice_level" name="spice_level" required>
+                        <option value="Mild">Mild</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Spicy">Spicy</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 15px;">
+                <label for="diet_type">Diet Type *</label>
+                <select id="diet_type" name="diet_type" required>
+                    <option value="Regular" selected>Regular</option>
+                    <option value="Vegetarian">Vegetarian</option>
+                    <option value="Vegan">Vegan</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- =====================
+             INGREDIENTS (FIXED GRID)
+        ====================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>🥕</span>
+                <div>
+                    <h2>Ingredients</h2>
+                    <p>Select ingredients and specify their quantities.</p>
+                </div>
+            </div>
+
+            <p class="add-ingredient-link">
+                Can't find an ingredient? <a href="{{ url_for('add_ingredient') }}">Add New Ingredient</a>
+            </p>
+
+            <div class="ingredient-grid">
+                {% for ingredient in ingredients %}
+                    <div class="ingredient-card">
+                        <div class="ingredient-check">
+                            <input 
+                                type="checkbox" 
+                                id="ing_{{ ingredient['IngredientID'] }}" 
+                                name="ingredients" 
+                                value="{{ ingredient['IngredientID'] }}"
+                            >
+                            <label for="ing_{{ ingredient['IngredientID'] }}">
+                                {{ ingredient['Name'] }}
+                            </label>
+                        </div>
+                        <div class="ingredient-inputs">
+                            <input 
+                                type="text" 
+                                name="quantity_{{ ingredient['IngredientID'] }}" 
+                                placeholder="Qty (e.g. 500)" 
+                            >
+                            <input 
+                                type="text" 
+                                name="unit_{{ ingredient['IngredientID'] }}" 
+                                placeholder="Unit (g / tsp)" 
+                            >
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- =====================
+             INSTRUCTIONS
+        ====================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>👨‍🍳</span>
+                <div>
+                    <h2>Cooking Instructions</h2>
+                    <p>Write each cooking step on a new line.</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <textarea 
+                    id="instructions" 
+                    name="instructions" 
+                    rows="8" 
+                    placeholder="Step 1: Cut the chicken...&#10;Step 2: Heat oil in a pan...&#10;Step 3: Add onion and spices...&#10;Step 4: Add chicken and cook..." 
+                    required
+                ></textarea>
+            </div>
+        </div>
+
+        <!-- =====================
+             NUTRITION
+        ====================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>🥗</span>
+                <div>
+                    <h2>Nutrition Information</h2>
+                    <p>Optional nutrition information for the recipe.</p>
+                </div>
+            </div>
+
+            <div class="form-three-column">
+                <div class="form-group">
+                    <label for="calories">Calories</label>
+                    <input type="number" id="calories" name="calories" step="0.1" min="0" placeholder="450">
+                    <small>kcal</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="protein">Protein</label>
+                    <input type="number" id="protein" name="protein" step="0.1" min="0" placeholder="25">
+                    <small>grams</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="carbohydrates">Carbohydrates</label>
+                    <input type="number" id="carbohydrates" name="carbohydrates" step="0.1" min="0" placeholder="40">
+                    <small>grams</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="fat">Fat</label>
+                    <input type="number" id="fat" name="fat" step="0.1" min="0" placeholder="15">
+                    <small>grams</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="fiber">Fiber</label>
+                    <input type="number" id="fiber" name="fiber" step="0.1" min="0" placeholder="5">
+                    <small>grams</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- =====================
+             RECIPE IMAGE
+        ====================== -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span>🖼️</span>
+                <div>
+                    <h2>Recipe Image</h2>
+                    <p>Upload an image file or provide a web URL.</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="image_file">Option 1: Upload Image from PC</label>
+                <input type="file" id="image_file" name="image_file" accept="image/*">
+            </div>
+
+            <div class="or-divider">-- OR --</div>
+
+            <div class="form-group">
+                <label for="image_url">Option 2: Image URL (Internet Link)</label>
+                <input 
+                    type="url" 
+                    id="image_url" 
+                    name="image_url" 
+                    placeholder="https://example.com/recipe.jpg"
+                >
+            </div>
+        </div>
+
+        <!-- =====================
+             ACTIONS
+        ====================== -->
+        <div class="form-actions">
+            <a href="{{ url_for('recipes') }}" class="btn btn-secondary">
+                Cancel
+            </a>
+
+            <button type="submit" class="save-button">
+                💾 Save Recipe
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

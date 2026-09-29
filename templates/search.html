@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - Smart Recipe Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .search-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .recipe-card {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .recipe-card h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .recipe-card a {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #3498db;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .recipe-card a:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background-color: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <h2 style="margin: 0;">🍲 Smart Recipe Assistant</h2>
+        <div class="navbar-links">
+            <a href="{{ url_for('dashboard') }}" style="margin-left: 15px; text-decoration: none; color: #3498db; font-weight: 500;">Dashboard</a>
+            <a href="{{ url_for('recommendations') }}" style="margin-left: 15px; text-decoration: none; color: #3498db; font-weight: 500;">Recommendations</a>
+            <a href="{{ url_for('logout') }}" style="margin-left: 15px; text-decoration: none; color: #e74c3c; font-weight: 500;">Logout</a>
+        </div>
+    </nav>
+
+    <!-- MAIN SEARCH CONTENT -->
+    <div class="search-container">
+        <h1>🔍 Search Results for "{{ query }}"</h1>
+
+        {% if recipes %}
+            <div class="recipe-grid">
+                {% for recipe in recipes %}
+                    <div class="recipe-card">
+                        <div>
+                            <h3>{{ recipe.Title }}</h3>
+                            <p>🍽️ Meal Type: {{ recipe.MealType if recipe.MealType else 'N/A' }}</p>
+                            <p>🌍 Cuisine: {{ recipe.Cuisine if recipe.Cuisine else 'N/A' }}</p>
+                            <p>⏱️ Cooking Time: {{ recipe.CookingTime }} mins</p>
+                        </div>
+                        <a href="{{ url_for('recipe_detail', recipe_id=recipe.RecipeID) }}">View Recipe</a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; margin-top: 20px;">
+                <p style="font-size: 1.1rem; color: #666;">No recipes found matching "{{ query }}".</p>
+                <a href="{{ url_for('dashboard') }}" style="color: #3498db; text-decoration: none; font-weight: bold;">Back to Dashboard</a>
+            </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>

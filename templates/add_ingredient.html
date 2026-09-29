@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Ingredient</title>
+</head>
+<body>
+    <h2>Add New Ingredient</h2>
+    <form method="POST">
+        <input type="text" name="name" placeholder="Ingredient Name (e.g. Cardamom)" required>
+        <button type="submit">Add Ingredient</button>
+    </form>
+    <br>
+    <a href="{{ url_for('add_recipe') }}">Back to Add Recipe</a>
+</body>
+</html>

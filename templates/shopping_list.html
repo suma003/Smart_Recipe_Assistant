@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}
+Shopping List - Smart Recipe Assistant
+{% endblock %}
+
+{% block content %}
+
+<div class="container shopping-page">
+
+    <!-- PAGE HEADER -->
+    <div class="shopping-header">
+        <div>
+            <span class="shopping-label">
+                🛒 SMART SHOPPING
+            </span>
+            <h1>
+                My Shopping List
+            </h1>
+            <p>
+                Keep track of the ingredients you need for your recipes.
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <a href="{{ url_for('ingredient_recommendations') }}" class="btn btn-primary">
+                🥕 Find Ingredients
+            </a>
+
+            <!-- CLEAR ALL BUTTON -->
+            {% if items %}
+            <form action="{{ url_for('clear_shopping_list') }}" method="POST" onsubmit="return confirm('Are you sure you want to clear all items?');">
+                <button type="submit" class="btn btn-danger" style="background-color: #ff4d4d; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                    🗑️ Clear All
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div style="color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 12px 15px; border-radius: 6px; margin-bottom: 20px; font-weight: 500;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if items %}
+
+    {# ফিল্টার ব্যবহার করে কেনাকাটা সম্পন্ন হওয়া আইটেমের সঠিক সংখ্যা বের করা #}
+    {% set purchased_items = items | selectattr('Status', 'equalto', 'Purchased') | list %}
+    {% set total_items = items|length %}
+    {% set purchased_count = purchased_items|length %}
+
+    {% if total_items > 0 %}
+        {% set progress = ((purchased_count / total_items) * 100)|round|int %}
+    {% else %}
+        {% set progress = 0 %}
+    {% endif %}
+
+    <div class="shopping-list-card" style="margin-bottom: 30px;">
+
+        <!-- LIST HEADER -->
+        <div class="shopping-list-header">
+            <div>
+                <h2>
+                    🛒 Recipe Missing Ingredients
+                </h2>
+                <p>
+                    Manage your shopping items
+                </p>
+            </div>
+
+            <div class="shopping-summary">
+                <div class="shopping-stat">
+                    <strong>{{ total_items }}</strong>
+                    <span>Total</span>
+                </div>
+
+                <div class="shopping-stat">
+                    <strong>{{ purchased_count }}</strong>
+                    <span>Purchased</span>
+                </div>
+
+                <div class="shopping-stat">
+                    <strong>{{ total_items - purchased_count }}</strong>
+                    <span>Remaining</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROGRESS SECTION -->
+        <div class="shopping-progress-section">
+            <div class="shopping-progress-top">
+                <span>Shopping Progress</span>
+                <strong>{{ progress }}%</strong>
+            </div>
+
+            <div class="shopping-progress">
+                <div class="shopping-progress-bar" style="width: {{ progress }}%;"></div>
+            </div>
+        </div>
+
+        <!-- ITEMS LIST -->
+        <div class="shopping-items">
+
+            {% for item in items %}
+
+            {% set is_purchased = (item['Status'] == 'Purchased') %}
+
+            <div class="shopping-item {% if is_purchased %} purchased {% endif %}">
+
+                <!-- CHECK ICON -->
+                <div class="shopping-item-check">
+                    {% if is_purchased %}
+                        <span class="purchased-icon" style="color: #28a745; font-weight: bold;">✓</span>
+                    {% else %}
+                        <span class="remaining-icon" style="color: #888;">○</span>
+                    {% endif %}
+                </div>
+
+                <!-- INGREDIENT INFO -->
+                <div class="shopping-item-info">
+                    <h3 {% if is_purchased %}style="text-decoration: line-through; color: #888;"{% endif %}>
+                        {{ item['Name'] }}
+                    </h3>
+
+                    {% if item['Quantity'] %}
+                        <p>
+                            {{ item['Quantity'] }}
+                            {% if item['Unit'] %}
+                                {{ item['Unit'] }}
+                            {% endif %}
+                        </p>
+                    {% else %}
+                        <p>Quantity not specified</p>
+                    {% endif %}
+                </div>
+
+                <!-- STATUS BADGE -->
+                <div class="shopping-item-status">
+                    {% if is_purchased %}
+                        <span class="status-purchased" style="color: #28a745; font-weight: bold;">
+                            ✓ Purchased
+                        </span>
+                    {% else %}
+                        <span class="status-remaining" style="color: #e67e22; font-weight: 500;">
+                            Needed
+                        </span>
+                    {% endif %}
+                </div>
+
+                <!-- ACTIONS -->
+                <div class="shopping-item-actions">
+
+                    <!-- TOGGLE PURCHASED FORM -->
+                    <form method="POST" action="{{ url_for('toggle_purchased', item_id=item['ShoppingListID']) }}">
+                        <button type="submit" class="shopping-action purchase-action" style="cursor: pointer;">
+                            {% if is_purchased %}
+                                ↩️ Mark Pending
+                            {% else %}
+                                ✓ Mark Purchased
+                            {% endif %}
+                        </button>
+                    </form>
+
+                    <!-- DELETE FORM -->
+                    <form method="POST" action="{{ url_for('delete_shopping_item', item_id=item['ShoppingListID']) }}">
+                        <button type="submit" class="shopping-action delete-action" style="cursor: pointer; background: none; border: none; font-size: 1.1rem;">
+                            🗑️
+                        </button>
+                    </form>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <!-- EMPTY STATE -->
+    <div class="shopping-empty">
+        <div class="shopping-empty-icon">🛒</div>
+        <h2>Your shopping list is empty</h2>
+        <p>Select available ingredients and get recipes with missing ingredient suggestions.</p>
+        <a href="{{ url_for('my_ingredients') }}" class="btn btn-primary">
+            🥕 Select Ingredients
+        </a>
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

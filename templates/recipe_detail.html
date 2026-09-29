@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ recipe["Title"] }} - Smart Recipe Assistant
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Back Button -->
+    <div class="recipe-back">
+        <a href="{{ url_for('recipes') }}">
+            ← Back to Recipes
+        </a>
+    </div>
+
+    <!-- Main Recipe Card -->
+    <div class="recipe-detail-card">
+
+        <!-- Image -->
+        <div class="recipe-detail-image">
+            {% if recipe["ImageURL"] %}
+                <img src="{{ recipe['ImageURL'] }}" alt="{{ recipe['Title'] }}">
+            {% else %}
+                <div class="detail-placeholder">
+                    🍲
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Recipe Information -->
+        <div class="recipe-detail-info">
+
+            <span class="recipe-label">
+                🍳 Smart Recipe
+            </span>
+
+            <h1>
+                {{ recipe["Title"] }}
+            </h1>
+
+            <p class="recipe-detail-description">
+                {{ recipe["Description"] }}
+            </p>
+
+            <!-- Meta Data -->
+            <div class="detail-meta">
+
+                <div class="detail-meta-item">
+                    <span>🍽️</span>
+                    <strong>Meal</strong>
+                    <small>{{ recipe["MealType"] }}</small>
+                </div>
+
+                <div class="detail-meta-item">
+                    <span>🌍</span>
+                    <strong>Cuisine</strong>
+                    <small>{{ recipe["Cuisine"] }}</small>
+                </div>
+
+                <div class="detail-meta-item">
+                    <span>⏱️</span>
+                    <strong>Time</strong>
+                    <small>{{ recipe["CookingTime"] }} min</small>
+                </div>
+
+                <div class="detail-meta-item">
+                    <span>📊</span>
+                    <strong>Difficulty</strong>
+                    <small>{{ recipe["Difficulty"] }}</small>
+                </div>
+
+            </div>
+
+            <!-- Spice + Diet Tags -->
+            <div class="recipe-tags">
+                {% if recipe["SpiceLevel"] %}
+                    <span class="badge">
+                        🌶️ {{ recipe["SpiceLevel"] }}
+                    </span>
+                {% endif %}
+
+                {% if recipe["DietType"] %}
+                    <span class="badge">
+                        🥗 {{ recipe["DietType"] }}
+                    </span>
+                {% endif %}
+            </div>
+
+            <!-- Favorite Button & Actions -->
+            <div class="detail-actions">
+                <form method="POST" action="{{ url_for('favorite_recipe', recipe_id=recipe['RecipeID']) }}" style="display: inline-block;">
+                    <button type="submit" class="btn">
+                        {% if is_favorite %}
+                            ❤️ Remove Favorite
+                        {% else %}
+                            🤍 Add to Favorite
+                        {% endif %}
+                    </button>
+                </form>
+
+                <a href="{{ url_for('recipes') }}" class="btn btn-secondary">
+                    Browse More
+                </a>
+            </div>
+
+            <p class="recipe-creator" style="margin-top: 10px;">
+                👨‍🍳 Created by:
+                <strong>
+                    {{ recipe["Creator"] }}
+                </strong>
+            </p>
+
+            <!-- OWNER CONTROLS (Edit & Delete) -->
+            {% if recipe["UserID"] == session.get("user_id") %}
+                <div class="owner-controls" style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc;">
+                    <a href="{{ url_for('edit_recipe', recipe_id=recipe['RecipeID']) }}" class="btn btn-secondary">
+                        ✏️ Edit Recipe
+                    </a>
+                    
+                    <form method="POST" action="{{ url_for('delete_recipe', recipe_id=recipe['RecipeID']) }}" style="display: inline-block; margin-left: 10px;">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this recipe?');">
+                            🗑️ Delete Recipe
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <!-- Ingredients + Instructions -->
+    <div class="detail-columns">
+
+        <!-- Ingredients Section -->
+        <div class="detail-section">
+            <div class="section-title">
+                <span>🥕</span>
+                <h2>Ingredients</h2>
+            </div>
+
+            <div class="ingredient-list">
+                {% set item_list = ingredients if (ingredients is defined and ingredients) else recipe_ingredients %}
+                {% for ingredient in item_list %}
+                    <div class="ingredient-item">
+                        <span>
+                            🥕 {{ ingredient["Name"] }}
+                        </span>
+                        <strong>
+                            {{ ingredient["Quantity"] }} {{ ingredient["Unit"] }}
+                        </strong>
+                    </div>
+                {% else %}
+                    <p>No ingredients listed.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Instructions Section -->
+        <div class="detail-section">
+            <div class="section-title">
+                <span>👨‍🍳</span>
+                <h2>Cooking Instructions</h2>
+            </div>
+
+            <div class="instructions">
+                {% set steps = recipe["Instructions"].split('\n') %}
+                {% for step in steps %}
+                    {% set clean_step = step.strip() %}
+                    {% if clean_step %}
+                        <div class="instruction-step">
+                            <p>{{ clean_step }}</p>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Nutrition Information -->
+    {% if nutrition %}
+    <div class="detail-section nutrition-section">
+        <div class="section-title">
+            <span>🥗</span>
+            <h2>Nutrition Information</h2>
+        </div>
+
+        <div class="nutrition-grid">
+            <div class="nutrition-item">
+                <div>🔥</div>
+                <div class="nutrition-value">{{ nutrition["Calories"] }}</div>
+                <small>Calories</small>
+            </div>
+
+            <div class="nutrition-item">
+                <div>💪</div>
+                <div class="nutrition-value">{{ nutrition["Protein"] }}g</div>
+                <small>Protein</small>
+            </div>
+
+            <div class="nutrition-item">
+                <div>🍚</div>
+                <div class="nutrition-value">{{ nutrition["Carbohydrates"] }}g</div>
+                <small>Carbohydrates</small>
+            </div>
+
+            <div class="nutrition-item">
+                <div>🥑</div>
+                <div class="nutrition-value">{{ nutrition["Fat"] }}g</div>
+                <small>Fat</small>
+            </div>
+
+            <div class="nutrition-item">
+                <div>🌾</div>
+                <div class="nutrition-value">{{ nutrition["Fiber"] }}g</div>
+                <small>Fiber</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Ingredient Availability / Missing Ingredients -->
+    {% if available_ingredients is defined and available_ingredients %}
+    <div class="detail-section">
+        <div class="section-title">
+            <span>🛒</span>
+            <h2>Ingredient Availability</h2>
+        </div>
+
+        <p class="section-description">
+            Based on your available ingredients:
+        </p>
+
+        <div class="availability-box">
+            <p>
+                🟢 Ingredients you have:
+                <strong>{{ matched_count }}</strong>
+            </p>
+
+            <p>
+                🔴 Missing ingredients:
+                <strong>{{ missing_count }}</strong>
+            </p>
+
+            {% if missing_count > 0 %}
+                <form method="POST" action="{{ url_for('add_missing_to_shopping_list', recipe_id=recipe['RecipeID']) }}">
+                    <button type="submit" class="btn">
+                        🛒 Add Missing Ingredients
+                    </button>
+                </form>
+            {% else %}
+                <p class="success-text">
+                    🎉 You have all ingredients!
+                </p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Rating Section -->
+    <div class="detail-section">
+        <div class="section-title">
+            <span>⭐</span>
+            <h2>Ratings & Reviews</h2>
+        </div>
+
+        <!-- Average Rating -->
+        {% if average_rating %}
+            <p style="font-size: 1.1rem; margin-bottom: 15px;">
+                <strong>Average Rating:</strong> ⭐ {{ "%.1f"|format(average_rating) }} / 5
+            </p>
+        {% else %}
+            <p>No ratings yet.</p>
+        {% endif %}
+
+        <!-- Rating Form -->
+        <form method="POST" action="{{ url_for('rate_recipe', recipe_id=recipe['RecipeID']) }}" class="rating-form">
+            <div class="form-group">
+                <label>Your Rating</label>
+                <select name="rating" class="form-control" required>
+                    <option value="">Select Rating</option>
+                    <option value="5">⭐⭐⭐⭐⭐ 5</option>
+                    <option value="4">⭐⭐⭐⭐ 4</option>
+                    <option value="3">⭐⭐⭐ 3</option>
+                    <option value="2">⭐⭐ 2</option>
+                    <option value="1">⭐ 1</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+                <label>Review</label>
+                <textarea name="review" class="form-control" rows="3" placeholder="Write your review..."></textarea>
+            </div>
+
+            <button type="submit" class="btn" style="margin-top: 10px;">
+                ⭐ Submit Rating
+            </button>
+        </form>
+
+        <!-- Existing Reviews List -->
+        {% if ratings %}
+            <h3 style="margin-top: 25px;">User Reviews</h3>
+            <div class="reviews-list">
+                {% for rating in ratings %}
+                    <div class="comment-card" style="margin-top: 10px;">
+                        <div class="comment-header">
+                            <strong>👤 {{ rating["Name"] }}</strong>
+                            <small>{{ rating["CreatedAt"] }}</small>
+                        </div>
+                        <p style="margin: 5px 0;">
+                            ⭐ {{ rating["Rating"] }}/5
+                        </p>
+                        {% if rating["Review"] %}
+                            <p>{{ rating["Review"] }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Comments Section -->
+    <div class="detail-section">
+        <div class="section-title">
+            <span>💬</span>
+            <h2>Comments</h2>
+        </div>
+
+        <!-- Add Comment Form -->
+        <form method="POST" action="{{ url_for('add_comment', recipe_id=recipe['RecipeID']) }}" class="comment-form">
+            <textarea name="comment" class="form-control" rows="3" placeholder="Share your thoughts..." required></textarea>
+            <br>
+            <button type="submit" class="btn" style="margin-top: 10px;">
+                💬 Add Comment
+            </button>
+        </form>
+
+        <!-- Comments List -->
+        <div class="comments-list" style="margin-top: 20px;">
+            {% for comment in comments %}
+                <div class="comment-card" style="margin-top: 10px;">
+                    <div class="comment-header">
+                        <strong>
+                            👤 {{ comment["UserName"] if comment["UserName"] is defined else comment["Name"] }}
+                        </strong>
+                        <small>
+                            {{ comment["CreatedAt"] }}
+                        </small>
+                    </div>
+                    <p>
+                        {{ comment["CommentText"] }}
+                    </p>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">💬</div>
+                    <p>
+                        No comments yet. Be the first to comment!
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
