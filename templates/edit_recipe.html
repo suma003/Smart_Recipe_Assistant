@@ -288,14 +288,33 @@ Edit Recipe - Smart Recipe Assistant
 
             <div class="ingredient-select-grid">
                 {% for ing in ingredients %}
-                {% set ing_data = existing_ingredients_dict.get(ing.IngredientID) if existing_ingredients_dict else None %}
+                {% set ing_id = ing.IngredientID %}
+                {% set ing_data = existing_ingredients_dict.get(ing_id) if existing_ingredients_dict else None %}
+                
+                {% set qty = '' %}
+                {% set unt = '' %}
+                {% if ing_data %}
+                    {% if ing_data.quantity is defined and ing_data.quantity is not none %}
+                        {% set qty = ing_data.quantity %}
+                    {% elif ing_data.Quantity is defined and ing_data.Quantity is not none %}
+                        {% set qty = ing_data.Quantity %}
+                    {% endif %}
+
+                    {% if ing_data.unit is defined and ing_data.unit is not none %}
+                        {% set unt = ing_data.unit %}
+                    {% elif ing_data.Unit is defined and ing_data.Unit is not none %}
+                        {% set unt = ing_data.Unit %}
+                    {% endif %}
+                {% endif %}
+
                 <div class="ingredient-row" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                     <label class="ingredient-checkbox" style="display: flex; align-items: center; gap: 5px; min-width: 150px;">
                         <input
                             type="checkbox"
+                            id="ing_checkbox_{{ ing_id }}"
                             name="ingredients"
-                            value="{{ ing.IngredientID }}"
-                            {% if ing_data %}
+                            value="{{ ing_id }}"
+                            {% if ing_data or qty or unt %}
                                 checked
                             {% endif %}
                         >
@@ -304,23 +323,26 @@ Edit Recipe - Smart Recipe Assistant
 
                     <input
                         type="text"
-                        name="quantity_{{ ing.IngredientID }}"
-                        value="{% if ing_data %}{{ ing_data.quantity if ing_data.quantity is defined and ing_data.quantity is not none else (ing_data.Quantity if ing_data.Quantity is defined and ing_data.Quantity is not none else '') }}{% endif %}"
+                        name="quantity_{{ ing_id }}"
+                        value="{{ qty }}"
                         placeholder="Qty"
                         style="width: 80px;"
+                        oninput="if(this.value.trim() !== '') { document.getElementById('ing_checkbox_{{ ing_id }}').checked = true; }"
                     >
 
                     <input
                         type="text"
-                        name="unit_{{ ing.IngredientID }}"
-                        value="{% if ing_data %}{{ ing_data.unit if ing_data.unit is defined and ing_data.unit is not none else (ing_data.Unit if ing_data.Unit is defined and ing_data.Unit is not none else '') }}{% endif %}"
+                        name="unit_{{ ing_id }}"
+                        value="{{ unt }}"
                         placeholder="Unit"
                         style="width: 100px;"
+                        oninput="if(this.value.trim() !== '') { document.getElementById('ing_checkbox_{{ ing_id }}').checked = true; }"
                     >
                 </div>
                 {% endfor %}
             </div>
         </div>
+        
         <!-- =========================
              INSTRUCTIONS
         ========================== -->

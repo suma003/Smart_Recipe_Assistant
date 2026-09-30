@@ -860,10 +860,11 @@ def edit_recipe(recipe_id):
             unit = request.form.get(f"unit_{ing_id_str}", "").strip()
             is_checked = ing_id_str in selected_checkboxes
 
-            if quantity or is_checked:
+            # Jodi checkbox check kora thake ba quantity/unit dewa thake, tahole database-e save hobe
+            if is_checked or quantity or unit:
                 connection.execute(
                     "INSERT INTO Recipe_Ingredients (RecipeID, IngredientID, Quantity, Unit) VALUES (?, ?, ?, ?)",
-                    (recipe_id, ing["IngredientID"], quantity if quantity else "As needed", unit)
+                    (recipe_id, ing["IngredientID"], quantity if quantity else "As needed", unit if unit else "")
                 )
 
         connection.commit()
@@ -872,21 +873,21 @@ def edit_recipe(recipe_id):
         flash("Recipe updated successfully!")
         return redirect(url_for("recipe_detail", recipe_id=recipe_id))
 
-    # GET রিকোয়েস্ট অংশ
+    # GET রিকোয়েস্ট অংশ (Variables matched with template names)
     meal_types = connection.execute("SELECT * FROM Meal_Types ORDER BY Name").fetchall()
     cuisines = connection.execute("SELECT * FROM Cuisines ORDER BY Name").fetchall()
-    all_ingredients = connection.execute("SELECT * FROM Ingredients ORDER BY Name").fetchall()
+    ingredients = connection.execute("SELECT * FROM Ingredients ORDER BY Name").fetchall()
     
     current_ing_rows = connection.execute(
         "SELECT IngredientID, Quantity, Unit FROM Recipe_Ingredients WHERE RecipeID = ?", (recipe_id,)
     ).fetchall()
     
-    current_ingredients = {
+    existing_ingredients_dict = {
         int(row["IngredientID"]): {"quantity": row["Quantity"], "unit": row["Unit"]}
         for row in current_ing_rows
     }
+    
 
-    # GET রিকোয়েস্টে Nutrition ডাটা তুলে আনা
     nutrition = connection.execute(
         "SELECT * FROM Nutrition WHERE RecipeID = ?", (recipe_id,)
     ).fetchone()
@@ -898,8 +899,8 @@ def edit_recipe(recipe_id):
         recipe=recipe,
         meal_types=meal_types,
         cuisines=cuisines,
-        all_ingredients=all_ingredients,
-        current_ingredients=current_ingredients,
+        ingredients=ingredients,
+        existing_ingredients_dict=existing_ingredients_dict,
         nutrition=nutrition
     )
 # DELETE RECIPE
