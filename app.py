@@ -615,7 +615,7 @@ def recipe_detail(recipe_id):
 
 
 # =========================================================
-# EDIT RECIPE
+# EDIT RECIPE (Updated)
 # =========================================================
 @app.route("/edit-recipe/<int:recipe_id>", methods=["GET", "POST"])
 def edit_recipe(recipe_id):
@@ -711,10 +711,19 @@ def edit_recipe(recipe_id):
     cuisines = connection.execute("SELECT * FROM Cuisines ORDER BY Name").fetchall()
     ingredients = connection.execute("SELECT * FROM Ingredients ORDER BY Name").fetchall()
 
+    # Fixed: Fetch Quantity and Unit as well
     existing_ingredients = connection.execute(
-        "SELECT IngredientID FROM Recipe_Ingredients WHERE RecipeID = ?", (recipe_id,)
+        "SELECT IngredientID, Quantity, Unit FROM Recipe_Ingredients WHERE RecipeID = ?", (recipe_id,)
     ).fetchall()
-    existing_ingredient_ids = {row["IngredientID"] for row in existing_ingredients}
+    
+    # Create a dictionary to easily access quantity and unit in the HTML form
+    existing_ingredients_dict = {
+        row["IngredientID"]: {
+            "quantity": row["Quantity"] if row["Quantity"] is not None else "",
+            "unit": row["Unit"] if row["Unit"] is not None else ""
+        }
+        for row in existing_ingredients
+    }
 
     nutrition = connection.execute(
         "SELECT * FROM Nutrition WHERE RecipeID = ?", (recipe_id,)
@@ -728,7 +737,7 @@ def edit_recipe(recipe_id):
         meal_types=meal_types,
         cuisines=cuisines,
         ingredients=ingredients,
-        existing_ingredient_ids=existing_ingredient_ids,
+        existing_ingredients_dict=existing_ingredients_dict,
         nutrition=nutrition
     )
 
