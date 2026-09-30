@@ -148,7 +148,12 @@
                             🥕 {{ ingredient["Name"] }}
                         </span>
                         <strong>
-                            {{ ingredient["Quantity"] }} {{ ingredient["Unit"] }}
+                            {% if ingredient["Quantity"] %}
+                                {{ ingredient["Quantity"] }}
+                            {% endif %}
+                            {% if ingredient["Unit"] %}
+                                {{ ingredient["Unit"] }}
+                            {% endif %}
                         </strong>
                     </div>
                 {% else %}
