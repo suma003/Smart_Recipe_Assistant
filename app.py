@@ -99,10 +99,9 @@ def register():
 # =========================================================
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    # ইউজার যদি ইতোমধ্যে লগইন অবস্থায় থাকে, তবে তাকে সরাসরি ড্যাশবোর্ডে রিডাইরেক্ট করবে
     if "user_id" in session:
         if session.get("user_role") == "Admin":
-            return redirect(url_for("admin_dashboard"))  # আপনার প্রজেক্টের এডমিন ড্যাশবোর্ড রাউটের নাম অনুযায়ী মিলিয়ে নিন
+            return redirect(url_for("admin_dashboard"))
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
@@ -116,16 +115,14 @@ def login():
         connection.close()
 
         if user and check_password_hash(user["Password"], password):
-            # 🟢 সেশনে তথ্যগুলো সেভ করা হচ্ছে
             session["user_id"] = user["UserID"]
             session["user_name"] = user["Name"]
             session["user_role"] = user["Role"] if "Role" in user.keys() else "User"
 
             flash("Login successful!", "success")
 
-            # 🟢 Role অনুযায়ী রিডাইরেক্ট করা (Admin হলে Admin Dashboard, অন্যথায় User Dashboard)
             if session.get("user_role") == "Admin":
-                return redirect(url_for("admin_dashboard")) # আপনার এডমিন ড্যাশবোর্ড রাউট অনুযায়ী পরিবর্তন করতে পারেন
+                return redirect(url_for("admin_dashboard"))
 
             return redirect(url_for("dashboard"))
 
@@ -134,182 +131,63 @@ def login():
 
     return render_template("login.html")
 
+
 # =========================================================
 # DASHBOARD
 # =========================================================
 @app.route("/dashboard")
 def dashboard():
-
     if "user_id" not in session:
         return redirect(url_for("login"))
 
     user_id = session["user_id"]
-
     connection = get_db_connection()
-
-    # ==============================
-    # USER CREATED RECIPES
-    # ==============================
 
     my_recipes = connection.execute(
         """
-        SELECT
-            Recipes.RecipeID,
-            Recipes.Title,
-            Recipes.CookingTime,
-            Recipes.Difficulty
-        FROM Recipes
-        WHERE Recipes.UserID = ?
-        ORDER BY Recipes.CreatedAt DESC
-        LIMIT 5
+        SELECT RecipeID, Title, CookingTime, Difficulty
+        FROM Recipes WHERE UserID = ?
+        ORDER BY CreatedAt DESC LIMIT 5
         """,
         (user_id,)
     ).fetchall()
-
-
-    # ==============================
-    # FAVORITES
-    # ==============================
 
     favorite_recipes = connection.execute(
         """
-        SELECT
-            Recipes.RecipeID,
-            Recipes.Title,
-            Recipes.CookingTime,
-            Recipes.Difficulty
-        FROM Favorites
-
-        JOIN Recipes
-            ON Favorites.RecipeID =
-               Recipes.RecipeID
-
+        SELECT Recipes.RecipeID, Recipes.Title, Recipes.CookingTime, Recipes.Difficulty
+        FROM Favorites JOIN Recipes ON Favorites.RecipeID = Recipes.RecipeID
         WHERE Favorites.UserID = ?
-
-        ORDER BY Favorites.CreatedAt DESC
-
-        LIMIT 5
+        ORDER BY Favorites.CreatedAt DESC LIMIT 5
         """,
         (user_id,)
     ).fetchall()
-
-
-    # ==============================
-    # RECENT SEARCHES
-    # ==============================
 
     recent_searches = connection.execute(
         """
-        SELECT
-            SearchText,
-            SearchDate
-        FROM Search_History
-
-        WHERE UserID = ?
-
-        ORDER BY SearchDate DESC
-
-        LIMIT 5
+        SELECT SearchText, SearchDate FROM Search_History
+        WHERE UserID = ? ORDER BY SearchDate DESC LIMIT 5
         """,
         (user_id,)
     ).fetchall()
 
-
-    # ==============================
-    # STATISTICS
-    # ==============================
-
-    total_recipes = connection.execute(
-        """
-        SELECT COUNT(*)
-        AS count
-
-        FROM Recipes
-
-        WHERE UserID = ?
-        """,
-        (user_id,)
-    ).fetchone()["count"]
-
-
-    total_favorites = connection.execute(
-        """
-        SELECT COUNT(*)
-        AS count
-
-        FROM Favorites
-
-        WHERE UserID = ?
-        """,
-        (user_id,)
-    ).fetchone()["count"]
-
-
-    total_ratings = connection.execute(
-        """
-        SELECT COUNT(*)
-        AS count
-
-        FROM Ratings
-
-        WHERE UserID = ?
-        """,
-        (user_id,)
-    ).fetchone()["count"]
-
-
-    total_comments = connection.execute(
-        """
-        SELECT COUNT(*)
-        AS count
-
-        FROM Comments
-
-        WHERE UserID = ?
-        """,
-        (user_id,)
-    ).fetchone()["count"]
-
-
-    # ==============================
-    # SHOPPING LIST COUNT
-    # ==============================
-
-    total_shopping_lists = connection.execute(
-        """
-        SELECT COUNT(*)
-        AS count
-
-        FROM Shopping_Lists
-
-        WHERE UserID = ?
-        """,
-        (user_id,)
-    ).fetchone()["count"]
-
+    total_recipes = connection.execute("SELECT COUNT(*) AS count FROM Recipes WHERE UserID = ?", (user_id,)).fetchone()["count"]
+    total_favorites = connection.execute("SELECT COUNT(*) AS count FROM Favorites WHERE UserID = ?", (user_id,)).fetchone()["count"]
+    total_ratings = connection.execute("SELECT COUNT(*) AS count FROM Ratings WHERE UserID = ?", (user_id,)).fetchone()["count"]
+    total_comments = connection.execute("SELECT COUNT(*) AS count FROM Comments WHERE UserID = ?", (user_id,)).fetchone()["count"]
+    total_shopping_lists = connection.execute("SELECT COUNT(*) AS count FROM Shopping_Lists WHERE UserID = ?", (user_id,)).fetchone()["count"]
 
     connection.close()
 
-
     return render_template(
         "dashboard.html",
-
         my_recipes=my_recipes,
-
         favorite_recipes=favorite_recipes,
-
         recent_searches=recent_searches,
-
         total_recipes=total_recipes,
-
         total_favorites=total_favorites,
-
         total_ratings=total_ratings,
-
         total_comments=total_comments,
-
-        total_shopping_lists=
-            total_shopping_lists
+        total_shopping_lists=total_shopping_lists
     )
 
 
@@ -346,15 +224,9 @@ def recipes():
 
     query = """
         SELECT DISTINCT
-            Recipes.RecipeID,
-            Recipes.Title,
-            Recipes.Description,
-            Recipes.CookingTime,
-            Recipes.Difficulty,
-            Recipes.ImageURL,
-            Meal_Types.Name AS MealType,
-            Cuisines.Name AS Cuisine,
-            Users.Name AS Creator
+            Recipes.RecipeID, Recipes.Title, Recipes.Description,
+            Recipes.CookingTime, Recipes.Difficulty, Recipes.ImageURL,
+            Meal_Types.Name AS MealType, Cuisines.Name AS Cuisine, Users.Name AS Creator
         FROM Recipes
         JOIN Meal_Types ON Recipes.MealTypeID = Meal_Types.MealTypeID
         JOIN Cuisines ON Recipes.CuisineID = Cuisines.CuisineID
@@ -368,23 +240,18 @@ def recipes():
     if search:
         conditions.append("Recipes.Title LIKE ?")
         parameters.append(f"%{search}%")
-
     if meal_type_id:
         conditions.append("Recipes.MealTypeID = ?")
         parameters.append(meal_type_id)
-
     if cuisine_id:
         conditions.append("Recipes.CuisineID = ?")
         parameters.append(cuisine_id)
-
     if difficulty:
         conditions.append("Recipes.Difficulty = ?")
         parameters.append(difficulty)
-
     if max_time:
         conditions.append("Recipes.CookingTime <= ?")
         parameters.append(max_time)
-
     if ingredient_id:
         conditions.append("Recipe_Ingredients.IngredientID = ?")
         parameters.append(ingredient_id)
@@ -433,15 +300,9 @@ def my_recipes():
 
     query = """
         SELECT 
-            Recipes.RecipeID,
-            Recipes.Title,
-            Recipes.Description,
-            Recipes.CookingTime,
-            Recipes.Difficulty,
-            Recipes.ImageURL,
-            Meal_Types.Name AS MealType,
-            Cuisines.Name AS Cuisine,
-            Users.Name AS Creator
+            Recipes.RecipeID, Recipes.Title, Recipes.Description,
+            Recipes.CookingTime, Recipes.Difficulty, Recipes.ImageURL,
+            Meal_Types.Name AS MealType, Cuisines.Name AS Cuisine, Users.Name AS Creator
         FROM Recipes
         JOIN Meal_Types ON Recipes.MealTypeID = Meal_Types.MealTypeID
         JOIN Cuisines ON Recipes.CuisineID = Cuisines.CuisineID
@@ -477,9 +338,6 @@ def add_recipe():
         spice_level = request.form.get("spice_level", "").strip() or None
         diet_type = request.form.get("diet_type", "").strip() or None
 
-        # ---------------------------------------------------------
-        # ১. নিউট্রিশন ডাটা রিসিভ করা (Nutrition Inputs)
-        # ---------------------------------------------------------
         calories = request.form.get("calories", "").strip()
         protein = request.form.get("protein", "").strip()
         carbohydrates = request.form.get("carbohydrates", "").strip()
@@ -519,30 +377,14 @@ def add_recipe():
             (UserID, MealTypeID, CuisineID, Title, Description, CookingTime, Difficulty, SpiceLevel, DietType, Instructions, ImageURL)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (
-                session["user_id"],
-                meal_type_id,
-                cuisine_id,
-                title,
-                description,
-                cooking_time_value,
-                difficulty,
-                spice_level,
-                diet_type,
-                instructions,
-                image_url,
-            ),
+            (session["user_id"], meal_type_id, cuisine_id, title, description, cooking_time_value, difficulty, spice_level, diet_type, instructions, image_url),
         )
         recipe_id = cursor.lastrowid
 
-        # ---------------------------------------------------------
-        # ২. Nutrition টেবিলে ডাটা সেভ করা
-        # ---------------------------------------------------------
         connection.execute(
             """
-            INSERT INTO Nutrition (
-                RecipeID, Calories, Protein, Carbohydrates, Fat, Fiber
-            ) VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO Nutrition (RecipeID, Calories, Protein, Carbohydrates, Fat, Fiber)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 recipe_id,
@@ -554,22 +396,13 @@ def add_recipe():
             ),
         )
 
-        # ---------------------------------------------------------
-        # ৩. উপাদানসমূহ (Ingredients) সেভ করা
-        # ---------------------------------------------------------
         selected_ingredients = request.form.getlist("ingredients")
         for ing_id in selected_ingredients:
             quantity = request.form.get(f"quantity_{ing_id}", "").strip()
             unit = request.form.get(f"unit_{ing_id}", "").strip()
-
             connection.execute(
                 "INSERT INTO Recipe_Ingredients (RecipeID, IngredientID, Quantity, Unit) VALUES (?, ?, ?, ?)",
-                (
-                    recipe_id,
-                    ing_id,
-                    quantity if quantity else "As needed",
-                    unit,
-                ),
+                (recipe_id, ing_id, quantity if quantity else "As needed", unit),
             )
 
         connection.commit()
@@ -578,15 +411,9 @@ def add_recipe():
         flash("Recipe added successfully!")
         return redirect(url_for("recipe_detail", recipe_id=recipe_id))
 
-    meal_types = connection.execute(
-        "SELECT * FROM Meal_Types ORDER BY Name"
-    ).fetchall()
-    cuisines = connection.execute(
-        "SELECT * FROM Cuisines ORDER BY Name"
-    ).fetchall()
-    ingredients = connection.execute(
-        "SELECT * FROM Ingredients ORDER BY Name"
-    ).fetchall()
+    meal_types = connection.execute("SELECT * FROM Meal_Types ORDER BY Name").fetchall()
+    cuisines = connection.execute("SELECT * FROM Cuisines ORDER BY Name").fetchall()
+    ingredients = connection.execute("SELECT * FROM Ingredients ORDER BY Name").fetchall()
     connection.close()
 
     return render_template(
@@ -595,6 +422,8 @@ def add_recipe():
         cuisines=cuisines,
         ingredients=ingredients,
     )
+
+
 # =========================================================
 # ADD NEW INGREDIENT
 # =========================================================
@@ -605,7 +434,6 @@ def add_ingredient():
 
     if request.method == "POST":
         name = request.form["name"].strip()
-
         if not name:
             flash("Ingredient name cannot be empty.")
             return redirect(url_for("add_ingredient"))
@@ -642,11 +470,7 @@ def recipe_detail(recipe_id):
 
     recipe = connection.execute(
         """
-        SELECT 
-            Recipes.*,
-            Meal_Types.Name AS MealType,
-            Cuisines.Name AS Cuisine,
-            Users.Name AS Creator
+        SELECT Recipes.*, Meal_Types.Name AS MealType, Cuisines.Name AS Cuisine, Users.Name AS Creator
         FROM Recipes
         JOIN Meal_Types ON Recipes.MealTypeID = Meal_Types.MealTypeID
         JOIN Cuisines ON Recipes.CuisineID = Cuisines.CuisineID
@@ -660,18 +484,11 @@ def recipe_detail(recipe_id):
         connection.close()
         return "Recipe not found", 404
 
-    # ১. Nutrition ডাটা ক্যোয়ারি করা
-    nutrition = connection.execute(
-        "SELECT * FROM Nutrition WHERE RecipeID = ?",
-        (recipe_id,)
-    ).fetchone()
+    nutrition = connection.execute("SELECT * FROM Nutrition WHERE RecipeID = ?", (recipe_id,)).fetchone()
 
     ingredients = connection.execute(
         """
-        SELECT 
-            Ingredients.Name,
-            Recipe_Ingredients.Quantity,
-            Recipe_Ingredients.Unit
+        SELECT Ingredients.Name, Recipe_Ingredients.Quantity, Recipe_Ingredients.Unit
         FROM Recipe_Ingredients
         JOIN Ingredients ON Recipe_Ingredients.IngredientID = Ingredients.IngredientID
         WHERE Recipe_Ingredients.RecipeID = ?
@@ -686,15 +503,9 @@ def recipe_detail(recipe_id):
 
     ratings = connection.execute(
         """
-        SELECT 
-            Ratings.Rating,
-            Ratings.Review,
-            Ratings.CreatedAt,
-            Users.Name
-        FROM Ratings
-        JOIN Users ON Ratings.UserID = Users.UserID
-        WHERE Ratings.RecipeID = ?
-        ORDER BY Ratings.CreatedAt DESC
+        SELECT Ratings.Rating, Ratings.Review, Ratings.CreatedAt, Users.Name
+        FROM Ratings JOIN Users ON Ratings.UserID = Users.UserID
+        WHERE Ratings.RecipeID = ? ORDER BY Ratings.CreatedAt DESC
         """,
         (recipe_id,)
     ).fetchall()
@@ -706,14 +517,9 @@ def recipe_detail(recipe_id):
 
     comments = connection.execute(
         """
-        SELECT 
-            Comments.CommentText,
-            Comments.CreatedAt,
-            Users.Name
-        FROM Comments
-        JOIN Users ON Comments.UserID = Users.UserID
-        WHERE Comments.RecipeID = ?
-        ORDER BY Comments.CreatedAt DESC
+        SELECT Comments.CommentText, Comments.CreatedAt, Users.Name
+        FROM Comments JOIN Users ON Comments.UserID = Users.UserID
+        WHERE Comments.RecipeID = ? ORDER BY Comments.CreatedAt DESC
         """,
         (recipe_id,)
     ).fetchall()
@@ -722,7 +528,6 @@ def recipe_detail(recipe_id):
 
     avg_val = avg_row["AverageRating"] if avg_row and avg_row["AverageRating"] is not None else None
 
-    # ২. render_template অংশ
     return render_template(
         "recipe_detail.html",
         recipe=recipe,
@@ -731,7 +536,7 @@ def recipe_detail(recipe_id):
         ratings=ratings,
         average_rating=avg_val,
         comments=comments,
-        nutrition=nutrition  # <- Nutrition তথ্য টেমপ্লেটে পাঠানো হলো
+        nutrition=nutrition
     )
 
 
@@ -744,9 +549,7 @@ def edit_recipe(recipe_id):
         return redirect(url_for("login"))
 
     connection = get_db_connection()
-    recipe = connection.execute(
-        "SELECT * FROM Recipes WHERE RecipeID = ?", (recipe_id,)
-    ).fetchone()
+    recipe = connection.execute("SELECT * FROM Recipes WHERE RecipeID = ?", (recipe_id,)).fetchone()
 
     if recipe is None:
         connection.close()
@@ -770,7 +573,6 @@ def edit_recipe(recipe_id):
         spice_level = request.form.get("spice_level", "").strip() or None
         diet_type = request.form.get("diet_type", "").strip() or None
 
-        # Nutrition ফর্মের ইনপুট রিসিভ করা
         calories = request.form.get("calories") or 0
         protein = request.form.get("protein") or 0
         carbohydrates = request.form.get("carbohydrates") or 0
@@ -809,48 +611,27 @@ def edit_recipe(recipe_id):
         connection.execute(
             """
             UPDATE Recipes
-            SET
-                Title = ?,
-                Description = ?,
-                MealTypeID = ?,
-                CuisineID = ?,
-                CookingTime = ?,
-                Difficulty = ?,
-                SpiceLevel = ?,
-                DietType = ?,
-                Instructions = ?,
-                ImageURL = ?
+            SET Title = ?, Description = ?, MealTypeID = ?, CuisineID = ?,
+                CookingTime = ?, Difficulty = ?, SpiceLevel = ?, DietType = ?,
+                Instructions = ?, ImageURL = ?
             WHERE RecipeID = ?
             """,
             (title, description, meal_type_id, cuisine_id, cooking_time_value, difficulty, spice_level, diet_type, instructions, image_url, recipe_id)
         )
 
-        # Nutrition আপডেট বা নতুন করে যোগ করা (UPSERT Logic)
-        existing_nutrition = connection.execute(
-            "SELECT NutritionID FROM Nutrition WHERE RecipeID = ?", (recipe_id,)
-        ).fetchone()
-
+        existing_nutrition = connection.execute("SELECT NutritionID FROM Nutrition WHERE RecipeID = ?", (recipe_id,)).fetchone()
         if existing_nutrition:
             connection.execute(
-                """
-                UPDATE Nutrition
-                SET Calories = ?, Protein = ?, Carbohydrates = ?, Fat = ?, Fiber = ?
-                WHERE RecipeID = ?
-                """,
+                "UPDATE Nutrition SET Calories = ?, Protein = ?, Carbohydrates = ?, Fat = ?, Fiber = ? WHERE RecipeID = ?",
                 (calories, protein, carbohydrates, fat, fiber, recipe_id)
             )
         else:
             connection.execute(
-                """
-                INSERT INTO Nutrition (RecipeID, Calories, Protein, Carbohydrates, Fat, Fiber)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
+                "INSERT INTO Nutrition (RecipeID, Calories, Protein, Carbohydrates, Fat, Fiber) VALUES (?, ?, ?, ?, ?, ?)",
                 (recipe_id, calories, protein, carbohydrates, fat, fiber)
             )
 
-        # Ingredients আপডেট করা
         connection.execute("DELETE FROM Recipe_Ingredients WHERE RecipeID = ?", (recipe_id,))
-
         all_ingredients_list = connection.execute("SELECT IngredientID FROM Ingredients").fetchall()
         selected_checkboxes = request.form.getlist("ingredients")
 
@@ -860,7 +641,6 @@ def edit_recipe(recipe_id):
             unit = request.form.get(f"unit_{ing_id_str}", "").strip()
             is_checked = ing_id_str in selected_checkboxes
 
-            # Jodi checkbox check kora thake ba quantity/unit dewa thake, tahole database-e save hobe
             if is_checked or quantity or unit:
                 connection.execute(
                     "INSERT INTO Recipe_Ingredients (RecipeID, IngredientID, Quantity, Unit) VALUES (?, ?, ?, ?)",
@@ -873,7 +653,6 @@ def edit_recipe(recipe_id):
         flash("Recipe updated successfully!")
         return redirect(url_for("recipe_detail", recipe_id=recipe_id))
 
-    # GET রিকোয়েস্ট অংশ (Variables matched with template names)
     meal_types = connection.execute("SELECT * FROM Meal_Types ORDER BY Name").fetchall()
     cuisines = connection.execute("SELECT * FROM Cuisines ORDER BY Name").fetchall()
     ingredients = connection.execute("SELECT * FROM Ingredients ORDER BY Name").fetchall()
@@ -887,11 +666,7 @@ def edit_recipe(recipe_id):
         for row in current_ing_rows
     }
     
-
-    nutrition = connection.execute(
-        "SELECT * FROM Nutrition WHERE RecipeID = ?", (recipe_id,)
-    ).fetchone()
-
+    nutrition = connection.execute("SELECT * FROM Nutrition WHERE RecipeID = ?", (recipe_id,)).fetchone()
     connection.close()
 
     return render_template(
@@ -903,6 +678,9 @@ def edit_recipe(recipe_id):
         existing_ingredients_dict=existing_ingredients_dict,
         nutrition=nutrition
     )
+
+
+# =========================================================
 # DELETE RECIPE
 # =========================================================
 @app.route("/delete-recipe/<int:recipe_id>", methods=["POST"])
@@ -945,11 +723,7 @@ def favorite_recipe(recipe_id):
         return redirect(url_for("login"))
 
     connection = get_db_connection()
-
-    recipe_exists = connection.execute(
-        "SELECT RecipeID FROM Recipes WHERE RecipeID = ?",
-        (recipe_id,)
-    ).fetchone()
+    recipe_exists = connection.execute("SELECT RecipeID FROM Recipes WHERE RecipeID = ?", (recipe_id,)).fetchone()
 
     if recipe_exists is None:
         connection.close()
@@ -999,11 +773,7 @@ def rate_recipe(recipe_id):
         return redirect(url_for("recipe_detail", recipe_id=recipe_id))
 
     connection = get_db_connection()
-
-    recipe_exists = connection.execute(
-        "SELECT RecipeID FROM Recipes WHERE RecipeID = ?",
-        (recipe_id,)
-    ).fetchone()
+    recipe_exists = connection.execute("SELECT RecipeID FROM Recipes WHERE RecipeID = ?", (recipe_id,)).fetchone()
 
     if recipe_exists is None:
         connection.close()
@@ -1017,11 +787,7 @@ def rate_recipe(recipe_id):
 
     if existing:
         connection.execute(
-            """
-            UPDATE Ratings
-            SET Rating = ?, Review = ?, CreatedAt = CURRENT_TIMESTAMP
-            WHERE RatingID = ?
-            """,
+            "UPDATE Ratings SET Rating = ?, Review = ?, CreatedAt = CURRENT_TIMESTAMP WHERE RatingID = ?",
             (rating, review, existing["RatingID"])
         )
         flash("Your rating has been updated.")
@@ -1047,17 +813,12 @@ def add_comment(recipe_id):
         return redirect(url_for("login"))
 
     comment_text = request.form.get("comment", "").strip()
-
     if not comment_text:
         flash("Comment cannot be empty.")
         return redirect(url_for("recipe_detail", recipe_id=recipe_id))
 
     connection = get_db_connection()
-
-    recipe_exists = connection.execute(
-        "SELECT RecipeID FROM Recipes WHERE RecipeID = ?",
-        (recipe_id,)
-    ).fetchone()
+    recipe_exists = connection.execute("SELECT RecipeID FROM Recipes WHERE RecipeID = ?", (recipe_id,)).fetchone()
 
     if recipe_exists is None:
         connection.close()
@@ -1073,7 +834,6 @@ def add_comment(recipe_id):
     connection.close()
 
     flash("Comment added successfully.")
-
     return redirect(url_for("recipe_detail", recipe_id=recipe_id))
 
 
@@ -1087,16 +847,9 @@ def favorites():
 
     connection = get_db_connection()
     query = """
-        SELECT 
-            Recipes.RecipeID,
-            Recipes.Title,
-            Recipes.Description,
-            Recipes.CookingTime,
-            Recipes.Difficulty,
-            Recipes.ImageURL,
-            Meal_Types.Name AS MealType,
-            Cuisines.Name AS Cuisine,
-            Users.Name AS Creator
+        SELECT Recipes.RecipeID, Recipes.Title, Recipes.Description, Recipes.CookingTime,
+               Recipes.Difficulty, Recipes.ImageURL, Meal_Types.Name AS MealType,
+               Cuisines.Name AS Cuisine, Users.Name AS Creator
         FROM Favorites
         JOIN Recipes ON Favorites.RecipeID = Recipes.RecipeID
         JOIN Meal_Types ON Recipes.MealTypeID = Meal_Types.MealTypeID
@@ -1129,9 +882,7 @@ def preferences():
         difficulty = request.form.get("difficulty")
         calorie_preference = request.form.get("calorie_preference")
 
-        existing = connection.execute(
-            "SELECT PreferenceID FROM User_Preferences WHERE UserID = ?", (user_id,)
-        ).fetchone()
+        existing = connection.execute("SELECT PreferenceID FROM User_Preferences WHERE UserID = ?", (user_id,)).fetchone()
 
         if existing:
             connection.execute(
@@ -1157,10 +908,7 @@ def preferences():
         flash("Preferences saved successfully!")
         return redirect(url_for("preferences"))
 
-    user_preferences = connection.execute(
-        "SELECT * FROM User_Preferences WHERE UserID = ?", (user_id,)
-    ).fetchone()
-
+    user_preferences = connection.execute("SELECT * FROM User_Preferences WHERE UserID = ?", (user_id,)).fetchone()
     connection.close()
 
     return render_template("preferences.html", preferences=user_preferences)
@@ -1169,317 +917,104 @@ def preferences():
 # =========================================================
 # SMART RECOMMENDATIONS
 # =========================================================
-
 @app.route("/recommendations")
 def recommendations():
-
     if "user_id" not in session:
         return redirect(url_for("login"))
 
     user_id = session["user_id"]
-
     connection = get_db_connection()
 
-    # =====================================
-    # GET USER PREFERENCES
-    # =====================================
-
-    preferences = connection.execute(
-        """
-        SELECT *
-        FROM User_Preferences
-        WHERE UserID = ?
-        """,
-        (user_id,)
-    ).fetchone()
+    preferences = connection.execute("SELECT * FROM User_Preferences WHERE UserID = ?", (user_id,)).fetchone()
 
     if not preferences:
-
         connection.close()
+        flash("Please set your preferences first.")
+        return redirect(url_for("preferences"))
 
-        flash(
-            "Please set your preferences first."
-        )
-
-        return redirect(
-            url_for("preferences")
-        )
-
-
-    # =====================================
-    # AVAILABLE INGREDIENTS
-    # =====================================
-
-    available_ids = session.get(
-        "available_ingredients",
-        []
-    )
-
-    available_ids = set(
-        int(x) for x in available_ids
-    )
-
-
-    # =====================================
-    # GET RECIPES
-    # =====================================
+    available_ids = session.get("available_ingredients", [])
+    available_ids = set(int(x) for x in available_ids)
 
     recipes = connection.execute(
         """
-        SELECT
-            Recipes.*,
-
-            Meal_Types.Name AS MealType,
-
-            Cuisines.Name AS Cuisine
-
+        SELECT Recipes.*, Meal_Types.Name AS MealType, Cuisines.Name AS Cuisine
         FROM Recipes
-
-        JOIN Meal_Types
-            ON Recipes.MealTypeID =
-               Meal_Types.MealTypeID
-
-        JOIN Cuisines
-            ON Recipes.CuisineID =
-               Cuisines.CuisineID
-
+        JOIN Meal_Types ON Recipes.MealTypeID = Meal_Types.MealTypeID
+        JOIN Cuisines ON Recipes.CuisineID = Cuisines.CuisineID
         ORDER BY Recipes.CreatedAt DESC
         """
     ).fetchall()
 
-
     recommended_recipes = []
 
-
-    # =====================================
-    # CALCULATE SCORE
-    # =====================================
-
     for recipe in recipes:
-
         score = 0
-
-
-        # ---------------------------------
-        # 1. INGREDIENT MATCH = 40
-        # ---------------------------------
-
         recipe_ingredients = connection.execute(
-            """
-            SELECT IngredientID
-            FROM Recipe_Ingredients
-            WHERE RecipeID = ?
-            """,
+            "SELECT IngredientID FROM Recipe_Ingredients WHERE RecipeID = ?",
             (recipe["RecipeID"],)
         ).fetchall()
 
-
-        recipe_ingredient_ids = {
-            row["IngredientID"]
-            for row in recipe_ingredients
-        }
-
+        recipe_ingredient_ids = {row["IngredientID"] for row in recipe_ingredients}
 
         if recipe_ingredient_ids:
-
-            matched_ingredients = (
-                recipe_ingredient_ids
-                & available_ids
-            )
-
-            ingredient_percentage = (
-                len(matched_ingredients)
-                / len(recipe_ingredient_ids)
-            )
-
-            ingredient_score = (
-                ingredient_percentage * 40
-            )
-
+            matched_ingredients = recipe_ingredient_ids & available_ids
+            ingredient_percentage = len(matched_ingredients) / len(recipe_ingredient_ids)
+            ingredient_score = ingredient_percentage * 40
             score += ingredient_score
-
         else:
-
             ingredient_percentage = 0
 
-
-        # ---------------------------------
-        # 2. MEAL TYPE = 10
-        # ---------------------------------
-
-        preferred_meal = request.args.get(
-            "meal_type",
-            ""
-        ).strip()
-
-        if (
-            preferred_meal
-            and recipe["MealType"] ==
-            preferred_meal
-        ):
-
+        preferred_meal = request.args.get("meal_type", "").strip()
+        if preferred_meal and recipe["MealType"] == preferred_meal:
             score += 10
 
-
-        # ---------------------------------
-        # 3. CUISINE = 10
-        # ---------------------------------
-
-        preferred_cuisine = request.args.get(
-            "cuisine",
-            ""
-        ).strip()
-
-        if (
-            preferred_cuisine
-            and recipe["Cuisine"] ==
-            preferred_cuisine
-        ):
-
+        preferred_cuisine = request.args.get("cuisine", "").strip()
+        if preferred_cuisine and recipe["Cuisine"] == preferred_cuisine:
             score += 10
 
-
-        # ---------------------------------
-        # 4. COOKING TIME = 10
-        # ---------------------------------
-
-        max_time = preferences[
-            "MaxCookingTime"
-        ]
-
+        max_time = preferences["MaxCookingTime"]
         if max_time:
-
             try:
-
                 max_time = int(max_time)
-
                 if recipe["CookingTime"] <= max_time:
-
                     score += 10
-
             except (TypeError, ValueError):
-
                 pass
 
-
-        # ---------------------------------
-        # 5. DIFFICULTY = 10
-        # ---------------------------------
-
-        if (
-            recipe["Difficulty"]
-            ==
-            preferences["DifficultyPreference"]
-        ):
-
+        if recipe["Difficulty"] == preferences["DifficultyPreference"]:
             score += 10
 
-
-        # ---------------------------------
-        # 6. SPICE LEVEL = 10
-        # ---------------------------------
-
-        if (
-            recipe["SpiceLevel"]
-            ==
-            preferences["SpiceLevel"]
-        ):
-
+        if recipe["SpiceLevel"] == preferences["SpiceLevel"]:
             score += 10
 
-
-        # ---------------------------------
-        # 7. DIET TYPE = 5
-        # ---------------------------------
-
-        if (
-            recipe["DietType"]
-            ==
-            preferences["DietType"]
-        ):
-
+        if recipe["DietType"] == preferences["DietType"]:
             score += 5
 
-
-        # ---------------------------------
-        # 8. RATING = 5
-        # ---------------------------------
-
         rating = connection.execute(
-            """
-            SELECT AVG(Rating)
-            AS AverageRating
-
-            FROM Ratings
-
-            WHERE RecipeID = ?
-            """,
+            "SELECT AVG(Rating) AS AverageRating FROM Ratings WHERE RecipeID = ?",
             (recipe["RecipeID"],)
         ).fetchone()
 
-
-        average_rating = (
-            rating["AverageRating"]
-            if rating["AverageRating"]
-            else 0
-        )
-
-
-        rating_score = (
-            average_rating / 5
-        ) * 5
-
-
+        average_rating = rating["AverageRating"] if rating["AverageRating"] else 0
+        rating_score = (average_rating / 5) * 5
         score += rating_score
 
-
-        # =================================
-        # STORE RESULT
-        # =================================
-
         recommended_recipes.append({
-
             "recipe": recipe,
-
             "score": round(score, 1),
-
-            "ingredient_percentage":
-                round(
-                    ingredient_percentage * 100,
-                    1
-                ),
-
-            "average_rating":
-                round(
-                    average_rating,
-                    1
-                )
-
+            "ingredient_percentage": round(ingredient_percentage * 100, 1),
+            "average_rating": round(average_rating, 1)
         })
 
-
-    # =====================================
-    # SORT HIGH → LOW
-    # =====================================
-
-    recommended_recipes.sort(
-        key=lambda x: x["score"],
-        reverse=True
-    )
-
-
+    recommended_recipes.sort(key=lambda x: x["score"], reverse=True)
     connection.close()
-
 
     return render_template(
         "recommendations.html",
-
-        recommendations=
-            recommended_recipes,
-
-        preferences=
-            preferences
+        recommendations=recommended_recipes,
+        preferences=preferences
     )
+
 
 # =========================================================
 # MY AVAILABLE INGREDIENTS
@@ -1500,7 +1035,6 @@ def my_ingredients():
             return redirect(url_for("my_ingredients"))
 
         try:
-            # Save the user's available ingredients in the session.
             session["available_ingredients"] = [int(x) for x in selected_ingredients]
         except (TypeError, ValueError):
             connection.close()
@@ -1508,22 +1042,12 @@ def my_ingredients():
             return redirect(url_for("my_ingredients"))
 
         connection.close()
-
-        # Go directly to ingredient-based recommendations.
         return redirect(url_for("ingredient_recommendations"))
 
-    ingredients = connection.execute("""
-        SELECT *
-        FROM Ingredients
-        ORDER BY Name
-    """).fetchall()
-
+    ingredients = connection.execute("SELECT * FROM Ingredients ORDER BY Name").fetchall()
     connection.close()
 
-    return render_template(
-        "my_ingredients.html",
-        ingredients=ingredients
-    )
+    return render_template("my_ingredients.html", ingredients=ingredients)
 
 
 # =========================================================
@@ -1534,9 +1058,7 @@ def ingredient_recommendations():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    # Read selected/available ingredients from the session.
     selected_ids = session.get("available_ingredients", [])
-
     try:
         selected_ids = list(dict.fromkeys(int(i) for i in selected_ids))
     except (TypeError, ValueError):
@@ -1547,73 +1069,44 @@ def ingredient_recommendations():
         return redirect(url_for("my_ingredients"))
 
     connection = get_db_connection()
-
-    # Keep the same session key available for the other shopping-list route.
     session["available_ingredient_ids"] = selected_ids
 
-    # 1. Get the selected ingredients from the database.
     placeholders = ",".join(["?"] * len(selected_ids))
     selected_ingredients = connection.execute(
-        f"""
-        SELECT IngredientID, Name
-        FROM Ingredients
-        WHERE IngredientID IN ({placeholders})
-        ORDER BY Name
-        """,
+        f"SELECT IngredientID, Name FROM Ingredients WHERE IngredientID IN ({placeholders}) ORDER BY Name",
         selected_ids
     ).fetchall()
 
-    # 2. Find recipes containing at least one selected ingredient.
     query = f"""
-        SELECT
-            Recipes.RecipeID,
-            Recipes.Title,
-            Recipes.Description,
-            Recipes.CookingTime,
-            Recipes.Difficulty,
-            Recipes.ImageURL,
-            Meal_Types.Name AS MealType,
-            Cuisines.Name AS Cuisine,
-            COUNT(DISTINCT Recipe_Ingredients.IngredientID) AS MatchedCount,
-            (
-                SELECT COUNT(*)
-                FROM Recipe_Ingredients RI2
-                WHERE RI2.RecipeID = Recipes.RecipeID
-            ) AS TotalIngredients
+        SELECT Recipes.RecipeID, Recipes.Title, Recipes.Description, Recipes.CookingTime,
+               Recipes.Difficulty, Recipes.ImageURL, Meal_Types.Name AS MealType,
+               Cuisines.Name AS Cuisine, COUNT(DISTINCT Recipe_Ingredients.IngredientID) AS MatchedCount,
+               (SELECT COUNT(*) FROM Recipe_Ingredients RI2 WHERE RI2.RecipeID = Recipes.RecipeID) AS TotalIngredients
         FROM Recipes
-        LEFT JOIN Meal_Types
-            ON Recipes.MealTypeID = Meal_Types.MealTypeID
-        LEFT JOIN Cuisines
-            ON Recipes.CuisineID = Cuisines.CuisineID
-        JOIN Recipe_Ingredients
-            ON Recipes.RecipeID = Recipe_Ingredients.RecipeID
+        LEFT JOIN Meal_Types ON Recipes.MealTypeID = Meal_Types.MealTypeID
+        LEFT JOIN Cuisines ON Recipes.CuisineID = Cuisines.CuisineID
+        JOIN Recipe_Ingredients ON Recipes.RecipeID = Recipe_Ingredients.RecipeID
         WHERE Recipe_Ingredients.IngredientID IN ({placeholders})
         GROUP BY Recipes.RecipeID
         ORDER BY MatchedCount DESC, Recipes.CreatedAt DESC
     """
 
     matched_recipes = connection.execute(query, selected_ids).fetchall()
-
     results = []
 
-    # 3. Calculate missing ingredients and match percentage.
     for r in matched_recipes:
         recipe_id = r["RecipeID"]
-
-        all_recipe_ingredients = connection.execute("""
-            SELECT
-                Ingredients.IngredientID,
-                Ingredients.Name,
-                Recipe_Ingredients.Quantity,
-                Recipe_Ingredients.Unit
+        all_recipe_ingredients = connection.execute(
+            """
+            SELECT Ingredients.IngredientID, Ingredients.Name, Recipe_Ingredients.Quantity, Recipe_Ingredients.Unit
             FROM Recipe_Ingredients
-            JOIN Ingredients
-                ON Recipe_Ingredients.IngredientID = Ingredients.IngredientID
+            JOIN Ingredients ON Recipe_Ingredients.IngredientID = Ingredients.IngredientID
             WHERE Recipe_Ingredients.RecipeID = ?
-        """, (recipe_id,)).fetchall()
+            """,
+            (recipe_id,)
+        ).fetchall()
 
         missing_ingredients = []
-
         for ing in all_recipe_ingredients:
             if ing["IngredientID"] not in selected_ids:
                 missing_ingredients.append({
@@ -1664,67 +1157,42 @@ def create_shopping_list(recipe_id):
     connection = get_db_connection()
     user_id = session["user_id"]
 
-    recipe = connection.execute(
-        "SELECT RecipeID, Title FROM Recipes WHERE RecipeID = ?",
-        (recipe_id,)
-    ).fetchone()
-
+    recipe = connection.execute("SELECT RecipeID, Title FROM Recipes WHERE RecipeID = ?", (recipe_id,)).fetchone()
     if recipe is None:
         connection.close()
         flash("Recipe not found.")
         return redirect(url_for("recipes"))
 
     available_ids = session.get("available_ingredients", [])
-
     try:
         available_ids = [int(i) for i in available_ids]
     except (TypeError, ValueError):
         available_ids = []
 
     cursor = connection.execute(
-        """
-        INSERT INTO Shopping_Lists (UserID, ListName)
-        VALUES (?, ?)
-        """,
+        "INSERT INTO Shopping_Lists (UserID, ListName) VALUES (?, ?)",
         (user_id, f"Missing Ingredients - {recipe['Title']}")
     )
     shopping_list_id = cursor.lastrowid
 
     recipe_ingredients = connection.execute(
-        """
-        SELECT IngredientID, Quantity, Unit
-        FROM Recipe_Ingredients
-        WHERE RecipeID = ?
-        """,
+        "SELECT IngredientID, Quantity, Unit FROM Recipe_Ingredients WHERE RecipeID = ?",
         (recipe_id,)
     ).fetchall()
 
     added_count = 0
-
     for ingredient in recipe_ingredients:
         if ingredient["IngredientID"] in available_ids:
             continue
 
         connection.execute(
-            """
-            INSERT INTO Shopping_List_Items
-                (ShoppingListID, IngredientID, Quantity, Unit)
-            VALUES (?, ?, ?, ?)
-            """,
-            (
-                shopping_list_id,
-                ingredient["IngredientID"],
-                ingredient["Quantity"],
-                ingredient["Unit"]
-            )
+            "INSERT INTO Shopping_List_Items (ShoppingListID, IngredientID, Quantity, Unit) VALUES (?, ?, ?, ?)",
+            (shopping_list_id, ingredient["IngredientID"], ingredient["Quantity"], ingredient["Unit"])
         )
         added_count += 1
 
     if added_count == 0:
-        connection.execute(
-            "DELETE FROM Shopping_Lists WHERE ShoppingListID = ?",
-            (shopping_list_id,)
-        )
+        connection.execute("DELETE FROM Shopping_Lists WHERE ShoppingListID = ?", (shopping_list_id,))
         connection.commit()
         connection.close()
         flash("You already have all ingredients for this recipe.")
@@ -1741,22 +1209,8 @@ def create_shopping_list(recipe_id):
 # SHOPPING LIST HELPER
 # =========================================================
 def get_or_create_default_shopping_list(connection, user_id):
-    """
-    Every logged-in user gets ONE ongoing "My Shopping List" row in the
-    Shopping_Lists table. This helper finds that row, or creates it if
-    it doesn't exist yet, and returns its ShoppingListID.
-
-    This keeps the app using only the two schema-defined tables
-    (Shopping_Lists + Shopping_List_Items) instead of a separate
-    ad-hoc table, and gives every shopping-list item a clear owner
-    through the Shopping_Lists.UserID column.
-    """
     existing_list = connection.execute(
-        """
-        SELECT ShoppingListID
-        FROM Shopping_Lists
-        WHERE UserID = ? AND ListName = ?
-        """,
+        "SELECT ShoppingListID FROM Shopping_Lists WHERE UserID = ? AND ListName = ?",
         (user_id, "My Shopping List")
     ).fetchone()
 
@@ -1764,10 +1218,7 @@ def get_or_create_default_shopping_list(connection, user_id):
         return existing_list["ShoppingListID"]
 
     cursor = connection.execute(
-        """
-        INSERT INTO Shopping_Lists (UserID, ListName)
-        VALUES (?, ?)
-        """,
+        "INSERT INTO Shopping_Lists (UserID, ListName) VALUES (?, ?)",
         (user_id, "My Shopping List")
     )
     return cursor.lastrowid
@@ -1782,8 +1233,6 @@ def add_missing_to_shopping_list(recipe_id):
         return redirect(url_for("login"))
 
     user_id = session["user_id"]
-
-    # Ingredients the user already said they have available (session).
     raw_available = session.get("available_ingredients", [])
     try:
         available_ingredients = [int(x) for x in raw_available]
@@ -1791,58 +1240,34 @@ def add_missing_to_shopping_list(recipe_id):
         available_ingredients = []
 
     connection = get_db_connection()
-
-    # Get (or create) this user's single ongoing shopping list.
     shopping_list_id = get_or_create_default_shopping_list(connection, user_id)
 
-    # Every ingredient this recipe needs.
     recipe_ingredients = connection.execute(
-        """
-        SELECT IngredientID, Quantity, Unit
-        FROM Recipe_Ingredients
-        WHERE RecipeID = ?
-        """,
+        "SELECT IngredientID, Quantity, Unit FROM Recipe_Ingredients WHERE RecipeID = ?",
         (recipe_id,)
     ).fetchall()
 
     added_count = 0
-
     for item in recipe_ingredients:
         ing_id = item["IngredientID"]
 
-        # Skip ingredients the user already has.
         if ing_id in available_ingredients:
             continue
 
-        # If this ingredient is already waiting (not yet purchased) on
-        # the user's list, just add to its quantity instead of making
-        # a duplicate row.
         existing_item = connection.execute(
-            """
-            SELECT ItemID, Quantity
-            FROM Shopping_List_Items
-            WHERE ShoppingListID = ? AND IngredientID = ? AND IsPurchased = 0
-            """,
+            "SELECT ItemID, Quantity FROM Shopping_List_Items WHERE ShoppingListID = ? AND IngredientID = ? AND IsPurchased = 0",
             (shopping_list_id, ing_id)
         ).fetchone()
 
         if existing_item:
             new_quantity = (existing_item["Quantity"] or 0) + (item["Quantity"] or 0)
             connection.execute(
-                """
-                UPDATE Shopping_List_Items
-                SET Quantity = ?
-                WHERE ItemID = ?
-                """,
+                "UPDATE Shopping_List_Items SET Quantity = ? WHERE ItemID = ?",
                 (new_quantity, existing_item["ItemID"])
             )
         else:
             connection.execute(
-                """
-                INSERT INTO Shopping_List_Items
-                    (ShoppingListID, IngredientID, Quantity, Unit, IsPurchased)
-                VALUES (?, ?, ?, ?, 0)
-                """,
+                "INSERT INTO Shopping_List_Items (ShoppingListID, IngredientID, Quantity, Unit, IsPurchased) VALUES (?, ?, ?, ?, 0)",
                 (shopping_list_id, ing_id, item["Quantity"], item["Unit"])
             )
 
@@ -1870,22 +1295,13 @@ def shopping_list():
     user_id = session["user_id"]
     connection = get_db_connection()
 
-    # Every item across every shopping list that belongs to this user.
-    # The join through Shopping_Lists.UserID is what makes this an
-    # ownership-safe query: a user can only ever see their own items.
     shopping_items = connection.execute(
         """
-        SELECT
-            Shopping_List_Items.ItemID,
-            Ingredients.Name,
-            Shopping_List_Items.Quantity,
-            Shopping_List_Items.Unit,
-            Shopping_List_Items.IsPurchased
+        SELECT Shopping_List_Items.ItemID, Ingredients.Name, Shopping_List_Items.Quantity,
+               Shopping_List_Items.Unit, Shopping_List_Items.IsPurchased
         FROM Shopping_List_Items
-        JOIN Shopping_Lists
-            ON Shopping_List_Items.ShoppingListID = Shopping_Lists.ShoppingListID
-        JOIN Ingredients
-            ON Shopping_List_Items.IngredientID = Ingredients.IngredientID
+        JOIN Shopping_Lists ON Shopping_List_Items.ShoppingListID = Shopping_Lists.ShoppingListID
+        JOIN Ingredients ON Shopping_List_Items.IngredientID = Ingredients.IngredientID
         WHERE Shopping_Lists.UserID = ?
         ORDER BY Shopping_List_Items.IsPurchased ASC, Ingredients.Name ASC
         """,
@@ -1893,7 +1309,6 @@ def shopping_list():
     ).fetchall()
 
     connection.close()
-
     return render_template("shopping_list.html", items=shopping_items)
 
 
@@ -1908,15 +1323,8 @@ def clear_shopping_list():
     user_id = session["user_id"]
     connection = get_db_connection()
 
-    # Delete only items that belong to shopping lists owned by this
-    # user (subquery keeps this scoped to the logged-in user only).
     connection.execute(
-        """
-        DELETE FROM Shopping_List_Items
-        WHERE ShoppingListID IN (
-            SELECT ShoppingListID FROM Shopping_Lists WHERE UserID = ?
-        )
-        """,
+        "DELETE FROM Shopping_List_Items WHERE ShoppingListID IN (SELECT ShoppingListID FROM Shopping_Lists WHERE UserID = ?)",
         (user_id,)
     )
     connection.commit()
@@ -1937,15 +1345,11 @@ def toggle_purchased(item_id):
     user_id = session["user_id"]
     connection = get_db_connection()
 
-    # OWNERSHIP CHECK: only fetch this item if it belongs to a
-    # shopping list owned by the logged-in user. If another user's
-    # item ID is passed in, this returns nothing and we do nothing.
     item = connection.execute(
         """
         SELECT Shopping_List_Items.ItemID, Shopping_List_Items.IsPurchased
         FROM Shopping_List_Items
-        JOIN Shopping_Lists
-            ON Shopping_List_Items.ShoppingListID = Shopping_Lists.ShoppingListID
+        JOIN Shopping_Lists ON Shopping_List_Items.ShoppingListID = Shopping_Lists.ShoppingListID
         WHERE Shopping_List_Items.ItemID = ? AND Shopping_Lists.UserID = ?
         """,
         (item_id, user_id)
@@ -1976,24 +1380,18 @@ def delete_shopping_item(item_id):
     user_id = session["user_id"]
     connection = get_db_connection()
 
-    # OWNERSHIP CHECK: same pattern as toggle_purchased above - only
-    # delete the item if it belongs to a list owned by this user.
     item = connection.execute(
         """
         SELECT Shopping_List_Items.ItemID
         FROM Shopping_List_Items
-        JOIN Shopping_Lists
-            ON Shopping_List_Items.ShoppingListID = Shopping_Lists.ShoppingListID
+        JOIN Shopping_Lists ON Shopping_List_Items.ShoppingListID = Shopping_Lists.ShoppingListID
         WHERE Shopping_List_Items.ItemID = ? AND Shopping_Lists.UserID = ?
         """,
         (item_id, user_id)
     ).fetchone()
 
     if item:
-        connection.execute(
-            "DELETE FROM Shopping_List_Items WHERE ItemID = ?",
-            (item_id,)
-        )
+        connection.execute("DELETE FROM Shopping_List_Items WHERE ItemID = ?", (item_id,))
         connection.commit()
         flash("Item deleted successfully!")
     else:
@@ -2002,10 +1400,12 @@ def delete_shopping_item(item_id):
     connection.close()
     return redirect(url_for("shopping_list"))
 
-    
+
+# =========================================================
+# ADMIN DASHBOARD
+# =========================================================
 @app.route("/admin")
 def admin_dashboard():
-
     if "user_id" not in session:
         return redirect(url_for("login"))
 
@@ -2015,117 +1415,63 @@ def admin_dashboard():
 
     connection = get_db_connection()
 
-    # =========================
-    # BASIC STATISTICS
-    # =========================
-
-    total_users = connection.execute(
-        "SELECT COUNT(*) AS count FROM Users"
-    ).fetchone()["count"]
-
-    total_recipes = connection.execute(
-        "SELECT COUNT(*) AS count FROM Recipes"
-    ).fetchone()["count"]
-
-    total_ingredients = connection.execute(
-        "SELECT COUNT(*) AS count FROM Ingredients"
-    ).fetchone()["count"]
-
-    total_favorites = connection.execute(
-        "SELECT COUNT(*) AS count FROM Favorites"
-    ).fetchone()["count"]
-
-    total_ratings = connection.execute(
-        "SELECT COUNT(*) AS count FROM Ratings"
-    ).fetchone()["count"]
-
-    total_comments = connection.execute(
-        "SELECT COUNT(*) AS count FROM Comments"
-    ).fetchone()["count"]
-
-
-    # =========================
-    # RECIPES BY MEAL TYPE
-    # =========================
+    total_users = connection.execute("SELECT COUNT(*) AS count FROM Users").fetchone()["count"]
+    total_recipes = connection.execute("SELECT COUNT(*) AS count FROM Recipes").fetchone()["count"]
+    total_ingredients = connection.execute("SELECT COUNT(*) AS count FROM Ingredients").fetchone()["count"]
+    total_favorites = connection.execute("SELECT COUNT(*) AS count FROM Favorites").fetchone()["count"]
+    total_ratings = connection.execute("SELECT COUNT(*) AS count FROM Ratings").fetchone()["count"]
+    total_comments = connection.execute("SELECT COUNT(*) AS count FROM Comments").fetchone()["count"]
 
     meal_data = connection.execute(
         """
-        SELECT
-            Meal_Types.Name AS MealType,
-            COUNT(Recipes.RecipeID) AS Total
+        SELECT Meal_Types.Name AS MealType, COUNT(Recipes.RecipeID) AS Total
         FROM Meal_Types
-        LEFT JOIN Recipes
-            ON Meal_Types.MealTypeID =
-               Recipes.MealTypeID
+        LEFT JOIN Recipes ON Meal_Types.MealTypeID = Recipes.MealTypeID
         GROUP BY Meal_Types.MealTypeID
         ORDER BY Total DESC
         """
     ).fetchall()
 
-
-    # =========================
-    # RECIPES BY CUISINE
-    # =========================
-
     cuisine_data = connection.execute(
         """
-        SELECT
-            Cuisines.Name AS Cuisine,
-            COUNT(Recipes.RecipeID) AS Total
+        SELECT Cuisines.Name AS Cuisine, COUNT(Recipes.RecipeID) AS Total
         FROM Cuisines
-        LEFT JOIN Recipes
-            ON Cuisines.CuisineID =
-               Recipes.CuisineID
+        LEFT JOIN Recipes ON Cuisines.CuisineID = Recipes.CuisineID
         GROUP BY Cuisines.CuisineID
         ORDER BY Total DESC
         """
     ).fetchall()
 
-
-    # =========================
-    # RATING DISTRIBUTION
-    # =========================
-
     rating_data = connection.execute(
         """
-        SELECT
-            Rating,
-            COUNT(*) AS Total
+        SELECT Rating, COUNT(*) AS Total
         FROM Ratings
         GROUP BY Rating
         ORDER BY Rating
         """
     ).fetchall()
 
-
     connection.close()
-
 
     return render_template(
         "admin_dashboard.html",
-
         total_users=total_users,
         total_recipes=total_recipes,
         total_ingredients=total_ingredients,
         total_favorites=total_favorites,
         total_ratings=total_ratings,
         total_comments=total_comments,
-
         meal_data=meal_data,
         cuisine_data=cuisine_data,
         rating_data=rating_data
     )
+
+
+# =========================================================
+# SEARCH REDIRECT
+# =========================================================
 @app.route('/search', methods=['GET'])
 def search():
-    # -----------------------------------------------------------------
-    # This route used to duplicate the search functionality already
-    # provided by /recipes and tried to write to a "RecentSearches"
-    # table that doesn't exist in schema.sql (it always failed
-    # silently). It has been simplified to redirect into the single,
-    # correct search system: /recipes (which already logs to the real
-    # Search_History table). This keeps old links/bookmarks to
-    # /search?query=... working without duplicating any logic.
-    # -----------------------------------------------------------------
     query = request.args.get('query', '').strip()
     return redirect(url_for('recipes', search=query))
 
