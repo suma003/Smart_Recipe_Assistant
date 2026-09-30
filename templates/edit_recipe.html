@@ -288,13 +288,14 @@ Edit Recipe - Smart Recipe Assistant
 
             <div class="ingredient-select-grid">
                 {% for ing in ingredients %}
+                {% set ing_data = existing_ingredients_dict.get(ing.IngredientID) if existing_ingredients_dict else None %}
                 <div class="ingredient-row" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                     <label class="ingredient-checkbox" style="display: flex; align-items: center; gap: 5px; min-width: 150px;">
                         <input
                             type="checkbox"
                             name="ingredients"
                             value="{{ ing.IngredientID }}"
-                            {% if existing_ingredients_dict and ing.IngredientID in existing_ingredients_dict %}
+                            {% if ing_data %}
                                 checked
                             {% endif %}
                         >
@@ -304,7 +305,7 @@ Edit Recipe - Smart Recipe Assistant
                     <input
                         type="text"
                         name="quantity_{{ ing.IngredientID }}"
-                        value="{{ existing_ingredients_dict[ing.IngredientID].quantity if existing_ingredients_dict and ing.IngredientID in existing_ingredients_dict else '' }}"
+                        value="{% if ing_data %}{{ ing_data.quantity if ing_data.quantity is defined and ing_data.quantity is not none else (ing_data.Quantity if ing_data.Quantity is defined and ing_data.Quantity is not none else '') }}{% endif %}"
                         placeholder="Qty"
                         style="width: 80px;"
                     >
@@ -312,7 +313,7 @@ Edit Recipe - Smart Recipe Assistant
                     <input
                         type="text"
                         name="unit_{{ ing.IngredientID }}"
-                        value="{{ existing_ingredients_dict[ing.IngredientID].unit if existing_ingredients_dict and ing.IngredientID in existing_ingredients_dict else '' }}"
+                        value="{% if ing_data %}{{ ing_data.unit if ing_data.unit is defined and ing_data.unit is not none else (ing_data.Unit if ing_data.Unit is defined and ing_data.Unit is not none else '') }}{% endif %}"
                         placeholder="Unit"
                         style="width: 100px;"
                     >
@@ -320,7 +321,6 @@ Edit Recipe - Smart Recipe Assistant
                 {% endfor %}
             </div>
         </div>
-
         <!-- =========================
              INSTRUCTIONS
         ========================== -->
