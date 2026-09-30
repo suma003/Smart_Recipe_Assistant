@@ -5,97 +5,144 @@ Edit Recipe - Smart Recipe Assistant
 {% endblock %}
 
 {% block content %}
+
 <div class="container">
 
-    <!-- PAGE HEADER -->
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
+
     <div class="form-page-header">
+
         <div>
             <h1>✏️ Edit Recipe</h1>
+
             <p>
                 Update your recipe information.
             </p>
         </div>
+
         <a
             href="{{ url_for('recipe_detail', recipe_id=recipe['RecipeID']) }}"
             class="btn btn-secondary"
         >
             ← Back to Recipe
         </a>
+
     </div>
+
+
+    <!-- =====================================================
+         EDIT RECIPE FORM
+    ====================================================== -->
 
     <form
         method="POST"
         class="recipe-form"
     >
 
-        <!-- =========================
+
+        <!-- =================================================
              BASIC INFORMATION
-        ========================== -->
+        ================================================== -->
+
         <div class="form-section">
+
             <div class="form-section-title">
+
                 <span>🍲</span>
+
                 <div>
-                    <h2>
-                        Basic Information
-                    </h2>
+                    <h2>Basic Information</h2>
+
                     <p>
                         Update the basic details of your recipe.
                     </p>
                 </div>
+
             </div>
 
+
+            <!-- RECIPE TITLE -->
+
             <div class="form-group">
+
                 <label>
                     Recipe Title *
                 </label>
+
                 <input
                     type="text"
                     name="title"
-                    value="{{ recipe['Title'] }}"
+                    value="{{ recipe['Title'] or '' }}"
                     placeholder="Recipe title"
                     required
                 >
+
             </div>
 
+
+            <!-- DESCRIPTION -->
+
             <div class="form-group">
+
                 <label>
                     Description *
                 </label>
+
                 <textarea
                     name="description"
                     rows="4"
                     required
-                >{{ recipe['Description'] }}</textarea>
+                >{{ recipe['Description'] or '' }}</textarea>
+
             </div>
+
         </div>
 
-        <!-- =========================
+
+
+        <!-- =================================================
              CATEGORY & CUISINE
-        ========================== -->
+        ================================================== -->
+
         <div class="form-section">
+
             <div class="form-section-title">
+
                 <span>🍽️</span>
+
                 <div>
-                    <h2>
-                        Category & Cuisine
-                    </h2>
+
+                    <h2>Category & Cuisine</h2>
+
                     <p>
                         Select the meal type and cuisine.
                     </p>
+
                 </div>
+
             </div>
 
+
             <div class="form-two-column">
+
+
                 <!-- MEAL TYPE -->
+
                 <div class="form-group">
+
                     <label>
                         Meal Type *
                     </label>
+
                     <select
                         name="meal_type_id"
                         required
                     >
+
                         {% for meal in meal_types %}
+
                         <option
                             value="{{ meal['MealTypeID'] }}"
                             {% if meal['MealTypeID'] == recipe['MealTypeID'] %}
@@ -104,20 +151,29 @@ Edit Recipe - Smart Recipe Assistant
                         >
                             {{ meal['Name'] }}
                         </option>
+
                         {% endfor %}
+
                     </select>
+
                 </div>
 
+
                 <!-- CUISINE -->
+
                 <div class="form-group">
+
                     <label>
                         Cuisine *
                     </label>
+
                     <select
                         name="cuisine_id"
                         required
                     >
+
                         {% for cuisine in cuisines %}
+
                         <option
                             value="{{ cuisine['CuisineID'] }}"
                             {% if cuisine['CuisineID'] == recipe['CuisineID'] %}
@@ -126,55 +182,81 @@ Edit Recipe - Smart Recipe Assistant
                         >
                             {{ cuisine['Name'] }}
                         </option>
+
                         {% endfor %}
+
                     </select>
+
                 </div>
+
             </div>
+
         </div>
 
-        <!-- =========================
+
+
+        <!-- =================================================
              COOKING DETAILS
-        ========================== -->
+        ================================================== -->
+
         <div class="form-section">
+
             <div class="form-section-title">
+
                 <span>⏱️</span>
+
                 <div>
-                    <h2>
-                        Cooking Details
-                    </h2>
+
+                    <h2>Cooking Details</h2>
+
                     <p>
                         Update cooking time, difficulty and preferences.
                     </p>
+
                 </div>
+
             </div>
 
+
             <div class="form-three-column">
+
+
                 <!-- COOKING TIME -->
+
                 <div class="form-group">
+
                     <label>
                         Cooking Time *
                     </label>
+
                     <input
                         type="number"
                         name="cooking_time"
                         min="1"
-                        value="{{ recipe['CookingTime'] }}"
+                        value="{{ recipe['CookingTime'] or '' }}"
                         required
                     >
+
                     <small>
                         Minutes
                     </small>
+
                 </div>
 
+
                 <!-- DIFFICULTY -->
+
                 <div class="form-group">
+
                     <label>
                         Difficulty *
                     </label>
+
                     <select
                         name="difficulty"
                         required
                     >
+
                         <option
                             value="Easy"
                             {% if recipe['Difficulty'] == 'Easy' %}
@@ -183,6 +265,7 @@ Edit Recipe - Smart Recipe Assistant
                         >
                             Easy
                         </option>
+
                         <option
                             value="Medium"
                             {% if recipe['Difficulty'] == 'Medium' %}
@@ -191,6 +274,7 @@ Edit Recipe - Smart Recipe Assistant
                         >
                             Medium
                         </option>
+
                         <option
                             value="Hard"
                             {% if recipe['Difficulty'] == 'Hard' %}
@@ -199,15 +283,24 @@ Edit Recipe - Smart Recipe Assistant
                         >
                             Hard
                         </option>
+
                     </select>
+
                 </div>
 
-                <!-- SPICE -->
+
+                <!-- SPICE LEVEL -->
+
                 <div class="form-group">
+
                     <label>
                         Spice Level
                     </label>
-                    <select name="spice_level">
+
+                    <select
+                        name="spice_level"
+                    >
+
                         <option
                             value="Mild"
                             {% if recipe['SpiceLevel'] == 'Mild' %}
@@ -216,6 +309,7 @@ Edit Recipe - Smart Recipe Assistant
                         >
                             Mild
                         </option>
+
                         <option
                             value="Medium"
                             {% if recipe['SpiceLevel'] == 'Medium' %}
@@ -224,6 +318,7 @@ Edit Recipe - Smart Recipe Assistant
                         >
                             Medium
                         </option>
+
                         <option
                             value="Spicy"
                             {% if recipe['SpiceLevel'] == 'Spicy' %}
@@ -232,16 +327,26 @@ Edit Recipe - Smart Recipe Assistant
                         >
                             Spicy
                         </option>
+
                     </select>
+
                 </div>
+
             </div>
 
+
             <!-- DIET TYPE -->
+
             <div class="form-group">
+
                 <label>
                     Diet Type
                 </label>
-                <select name="diet_type">
+
+                <select
+                    name="diet_type"
+                >
+
                     <option
                         value="Regular"
                         {% if recipe['DietType'] == 'Regular' %}
@@ -250,6 +355,7 @@ Edit Recipe - Smart Recipe Assistant
                     >
                         Regular
                     </option>
+
                     <option
                         value="Vegetarian"
                         {% if recipe['DietType'] == 'Vegetarian' %}
@@ -258,6 +364,7 @@ Edit Recipe - Smart Recipe Assistant
                     >
                         Vegetarian
                     </option>
+
                     <option
                         value="Vegan"
                         {% if recipe['DietType'] == 'Vegan' %}
@@ -266,130 +373,235 @@ Edit Recipe - Smart Recipe Assistant
                     >
                         Vegan
                     </option>
+
                 </select>
+
             </div>
+
         </div>
 
-        <!-- =========================
+
+
+        <!-- =================================================
              INGREDIENTS
-        ========================== -->
+        ================================================== -->
+
         <div class="form-section">
+
             <div class="form-section-title">
+
                 <span>🥕</span>
+
                 <div>
-                    <h2>
-                        Ingredients
-                    </h2>
+
+                    <h2>Ingredients</h2>
+
                     <p>
-                        Update the ingredients used in this recipe, along with quantities and units.
+                        Update the ingredients used in this recipe,
+                        along with quantities and units.
                     </p>
+
                 </div>
+
             </div>
+
 
             <div class="ingredient-select-grid">
+
+
                 {% for ing in ingredients %}
-                {% set ing_id = ing.IngredientID %}
-                {% set ing_data = existing_ingredients_dict.get(ing_id) if existing_ingredients_dict else None %}
-                
-                {% set qty = '' %}
-                {% set unt = '' %}
-                {% if ing_data %}
-                    {% if ing_data.quantity is defined and ing_data.quantity is not none %}
-                        {% set qty = ing_data.quantity %}
-                    {% elif ing_data.Quantity is defined and ing_data.Quantity is not none %}
-                        {% set qty = ing_data.Quantity %}
+
+                    {% set ing_id = ing['IngredientID'] %}
+
+                    <!--
+                        Get existing ingredient data
+                        from existing_ingredients_dict
+                    -->
+
+                    {% set ing_data = existing_ingredients_dict.get(ing_id) %}
+
+
+                    <!-- Default values -->
+
+                    {% set qty = '' %}
+
+                    {% set unt = '' %}
+
+
+                    <!--
+                        If this ingredient already exists
+                        in the recipe, get Quantity and Unit
+                    -->
+
+                    {% if ing_data %}
+
+                        {% if ing_data['Quantity'] is not none %}
+
+                            {% set qty = ing_data['Quantity'] %}
+
+                        {% endif %}
+
+
+                        {% if ing_data['Unit'] is not none %}
+
+                            {% set unt = ing_data['Unit'] %}
+
+                        {% endif %}
+
                     {% endif %}
 
-                    {% if ing_data.unit is defined and ing_data.unit is not none %}
-                        {% set unt = ing_data.unit %}
-                    {% elif ing_data.Unit is defined and ing_data.Unit is not none %}
-                        {% set unt = ing_data.Unit %}
-                    {% endif %}
-                {% endif %}
 
-                <div class="ingredient-row" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <label class="ingredient-checkbox" style="display: flex; align-items: center; gap: 5px; min-width: 150px;">
-                        <input
-                            type="checkbox"
-                            id="ing_checkbox_{{ ing_id }}"
-                            name="ingredients"
-                            value="{{ ing_id }}"
-                            {% if ing_data or qty or unt %}
-                                checked
-                            {% endif %}
+
+                    <!-- =================================================
+                         INGREDIENT ROW
+                    ================================================== -->
+
+                    <div
+                        class="ingredient-row"
+                        style="
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                            margin-bottom: 10px;
+                            flex-wrap: wrap;
+                        "
+                    >
+
+
+                        <!-- INGREDIENT CHECKBOX -->
+
+                        <label
+                            class="ingredient-checkbox"
+                            style="
+                                display: flex;
+                                align-items: center;
+                                gap: 5px;
+                                min-width: 150px;
+                            "
                         >
-                        <span>{{ ing.Name }}</span>
-                    </label>
 
-                    <input
-                        type="text"
-                        name="quantity_{{ ing_id }}"
-                        value="{{ qty }}"
-                        placeholder="Qty"
-                        style="width: 80px;"
-                        oninput="if(this.value.trim() !== '') { document.getElementById('ing_checkbox_{{ ing_id }}').checked = true; }"
-                    >
+                            <input
+                                type="checkbox"
+                                id="ing_checkbox_{{ ing_id }}"
+                                name="ingredients"
+                                value="{{ ing_id }}"
 
-                    <input
-                        type="text"
-                        name="unit_{{ ing_id }}"
-                        value="{{ unt }}"
-                        placeholder="Unit"
-                        style="width: 100px;"
-                        oninput="if(this.value.trim() !== '') { document.getElementById('ing_checkbox_{{ ing_id }}').checked = true; }"
-                    >
-                </div>
+                                {% if ing_id in existing_ingredient_ids %}
+                                    checked
+                                {% endif %}
+                            >
+
+                            <span>
+                                {{ ing['Name'] }}
+                            </span>
+
+                        </label>
+
+
+
+                        <!-- QUANTITY -->
+
+                        <input
+                            type="text"
+                            name="quantity_{{ ing_id }}"
+                            value="{{ qty }}"
+                            placeholder="Qty"
+                            style="width: 80px;"
+                        >
+
+
+
+                        <!-- UNIT -->
+
+                        <input
+                            type="text"
+                            name="unit_{{ ing_id }}"
+                            value="{{ unt }}"
+                            placeholder="Unit"
+                            style="width: 100px;"
+                        >
+
+                    </div>
+
                 {% endfor %}
+
             </div>
+
         </div>
-        
-        <!-- =========================
-             INSTRUCTIONS
-        ========================== -->
+
+
+
+        <!-- =================================================
+             COOKING INSTRUCTIONS
+        ================================================== -->
+
         <div class="form-section">
+
             <div class="form-section-title">
+
                 <span>👨‍🍳</span>
+
                 <div>
-                    <h2>
-                        Cooking Instructions
-                    </h2>
+
+                    <h2>Cooking Instructions</h2>
+
                     <p>
                         Update the cooking steps.
                     </p>
+
                 </div>
+
             </div>
 
+
             <div class="form-group">
+
                 <textarea
                     name="instructions"
                     rows="10"
                     required
-                >{{ recipe['Instructions'] }}</textarea>
+                >{{ recipe['Instructions'] or '' }}</textarea>
+
             </div>
+
         </div>
 
-        <!-- =========================
-             NUTRITION
-        ========================== -->
+
+
+        <!-- =================================================
+             NUTRITION INFORMATION
+        ================================================== -->
+
         <div class="form-section">
+
             <div class="form-section-title">
+
                 <span>🥗</span>
+
                 <div>
-                    <h2>
-                        Nutrition Information
-                    </h2>
+
+                    <h2>Nutrition Information</h2>
+
                     <p>
                         Update the nutritional information.
                     </p>
+
                 </div>
+
             </div>
 
+
             <div class="form-three-column">
+
+
                 <!-- CALORIES -->
+
                 <div class="form-group">
+
                     <label>
                         Calories
                     </label>
+
                     <input
                         type="number"
                         name="calories"
@@ -397,16 +609,23 @@ Edit Recipe - Smart Recipe Assistant
                         min="0"
                         value="{{ nutrition['Calories'] if nutrition else '' }}"
                     >
+
                     <small>
                         kcal
                     </small>
+
                 </div>
 
+
+
                 <!-- PROTEIN -->
+
                 <div class="form-group">
+
                     <label>
                         Protein
                     </label>
+
                     <input
                         type="number"
                         name="protein"
@@ -414,16 +633,23 @@ Edit Recipe - Smart Recipe Assistant
                         min="0"
                         value="{{ nutrition['Protein'] if nutrition else '' }}"
                     >
+
                     <small>
                         grams
                     </small>
+
                 </div>
 
-                <!-- CARBS -->
+
+
+                <!-- CARBOHYDRATES -->
+
                 <div class="form-group">
+
                     <label>
                         Carbohydrates
                     </label>
+
                     <input
                         type="number"
                         name="carbohydrates"
@@ -431,16 +657,23 @@ Edit Recipe - Smart Recipe Assistant
                         min="0"
                         value="{{ nutrition['Carbohydrates'] if nutrition else '' }}"
                     >
+
                     <small>
                         grams
                     </small>
+
                 </div>
 
+
+
                 <!-- FAT -->
+
                 <div class="form-group">
+
                     <label>
                         Fat
                     </label>
+
                     <input
                         type="number"
                         name="fat"
@@ -448,75 +681,116 @@ Edit Recipe - Smart Recipe Assistant
                         min="0"
                         value="{{ nutrition['Fat'] if nutrition else '' }}"
                     >
+
                     <small>
                         grams
                     </small>
+
                 </div>
 
+
+
                 <!-- FIBER -->
+
                 <div class="form-group">
+
                     <label>
                         Fiber
                     </label>
+
                     <input
                         type="number"
                         name="fiber"
+                        value="{{ nutrition['Fiber'] if nutrition else '' }}"
                         step="0.1"
                         min="0"
-                        value="{{ nutrition['Fiber'] if nutrition else '' }}"
                     >
+
                     <small>
                         grams
                     </small>
+
                 </div>
+
             </div>
+
         </div>
 
-        <!-- =========================
-             IMAGE
-        ========================== -->
+
+
+        <!-- =================================================
+             RECIPE IMAGE
+        ================================================== -->
+
         <div class="form-section">
+
             <div class="form-section-title">
+
                 <span>🖼️</span>
+
                 <div>
-                    <h2>
-                        Recipe Image
-                    </h2>
+
+                    <h2>Recipe Image</h2>
+
                     <p>
                         Update the recipe image URL.
                     </p>
+
                 </div>
+
             </div>
 
-            <div class="form-group">
-                <label>
-                    Image URL
-                </label>
-                <input
-                    type="url"
-                    name="image_url"
-                    value="{{ recipe['ImageURL'] or '' }}"
-                    placeholder="https://example.com/recipe.jpg"
-                >
-            </div>
+
+          <!-- IMAGE URL -->
+
+<div class="form-group">
+
+    <label>
+        Image URL
+    </label>
+
+    <input
+        type="text"
+        name="image_url"
+        value="{{ recipe['ImageURL'] or '' }}"
+        placeholder="Enter image URL or path"
+    >
+
+</div>
+
+
+            <!-- CURRENT IMAGE -->
 
             {% if recipe['ImageURL'] %}
+
             <div class="current-image">
+
                 <p>
                     Current Image
                 </p>
+
                 <img
                     src="{{ recipe['ImageURL'] }}"
                     alt="{{ recipe['Title'] }}"
                 >
+
             </div>
+
             {% endif %}
+
         </div>
 
-        <!-- =========================
+
+
+        <!-- =================================================
              ACTION BUTTONS
-        ========================== -->
+        ================================================== -->
+
         <div class="form-actions">
+
+
+            <!-- CANCEL -->
+
             <a
                 href="{{ url_for('recipe_detail', recipe_id=recipe['RecipeID']) }}"
                 class="btn btn-secondary"
@@ -524,14 +798,22 @@ Edit Recipe - Smart Recipe Assistant
                 Cancel
             </a>
 
+
+
+            <!-- UPDATE -->
+
             <button
                 type="submit"
                 class="save-button"
             >
                 💾 Update Recipe
             </button>
+
         </div>
 
+
     </form>
+
 </div>
+
 {% endblock %}

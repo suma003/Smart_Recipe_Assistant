@@ -788,7 +788,6 @@ def recipe_detail(recipe_id):
 # =========================================================
 # EDIT RECIPE
 # =========================================================
-
 @app.route("/edit-recipe/<int:recipe_id>", methods=["GET", "POST"])
 def edit_recipe(recipe_id):
 
@@ -797,6 +796,9 @@ def edit_recipe(recipe_id):
 
     connection = get_db_connection()
 
+    # =====================================================
+    # GET MAIN RECIPE
+    # =====================================================
     recipe = connection.execute(
         """
         SELECT *
@@ -808,15 +810,13 @@ def edit_recipe(recipe_id):
 
     if not recipe:
         connection.close()
-
         flash("Recipe not found.")
-
         return redirect(url_for("recipes"))
 
-
-    # Only recipe owner can edit
+    # =====================================================
+    # CHECK RECIPE OWNER
+    # =====================================================
     if recipe["UserID"] != session["user_id"]:
-
         connection.close()
 
         flash("You are not allowed to edit this recipe.")
@@ -828,46 +828,43 @@ def edit_recipe(recipe_id):
             )
         )
 
-
+    # =====================================================
+    # POST - UPDATE RECIPE
+    # =====================================================
     if request.method == "POST":
 
-        title = request.form.get("title")
-        description = request.form.get("description")
+        title = request.form.get("title", "").strip()
+        description = request.form.get("description", "").strip()
 
-        meal_type_id = request.form.get(
-            "meal_type_id"
-        )
+        meal_type_id = request.form.get("meal_type_id")
+        cuisine_id = request.form.get("cuisine_id")
 
-        cuisine_id = request.form.get(
-            "cuisine_id"
-        )
-
-        cooking_time = request.form.get(
-            "cooking_time"
-        )
-
-        difficulty = request.form.get(
-            "difficulty"
-        )
+        cooking_time = request.form.get("cooking_time")
+        difficulty = request.form.get("difficulty")
 
         spice_level = request.form.get(
-            "spice_level"
-        )
+            "spice_level",
+            ""
+        ).strip() or None
 
         diet_type = request.form.get(
-            "diet_type"
-        )
+            "diet_type",
+            ""
+        ).strip() or None
 
         instructions = request.form.get(
-            "instructions"
-        )
+            "instructions",
+            ""
+        ).strip()
 
         image_url = request.form.get(
-            "image_url"
-        )
+            "image_url",
+            ""
+        ).strip() or None
 
-
-        # Update recipe
+        # =================================================
+        # UPDATE MAIN RECIPE
+        # =================================================
         connection.execute(
             """
             UPDATE Recipes
@@ -899,16 +896,11 @@ def edit_recipe(recipe_id):
             )
         )
 
-
-        # =========================
+        # =================================================
         # UPDATE INGREDIENTS
-        # =========================
+        # =================================================
 
-        selected_ingredients = request.form.getlist(
-            "ingredients"
-        )
-
-
+        # Delete old ingredients first
         connection.execute(
             """
             DELETE FROM Recipe_Ingredients
@@ -917,38 +909,77 @@ def edit_recipe(recipe_id):
             (recipe_id,)
         )
 
+        # Get selected ingredients
+        selected_ingredients = request.form.getlist(
+            "ingredients"
+        )
 
+        # Insert selected ingredients again
         for ingredient_id in selected_ingredients:
+
+            quantity = request.form.get(
+                f"quantity_{ingredient_id}",
+                ""
+            ).strip()
+
+            unit = request.form.get(
+                f"unit_{ingredient_id}",
+                ""
+            ).strip()
+
+            # If quantity is empty
+            if not quantity:
+                quantity = "As needed"
 
             connection.execute(
                 """
                 INSERT INTO Recipe_Ingredients
                 (
                     RecipeID,
-                    IngredientID
+                    IngredientID,
+                    Quantity,
+                    Unit
                 )
-                VALUES (?, ?)
+                VALUES (?, ?, ?, ?)
                 """,
                 (
                     recipe_id,
-                    ingredient_id
+                    ingredient_id,
+                    quantity,
+                    unit
                 )
             )
 
-
-        # =========================
+        # =================================================
         # UPDATE NUTRITION
-        # =========================
+        # =================================================
 
-        calories = request.form.get("calories")
-        protein = request.form.get("protein")
+        calories = request.form.get(
+            "calories",
+            ""
+        ).strip()
+
+        protein = request.form.get(
+            "protein",
+            ""
+        ).strip()
+
         carbohydrates = request.form.get(
-            "carbohydrates"
-        )
-        fat = request.form.get("fat")
-        fiber = request.form.get("fiber")
+            "carbohydrates",
+            ""
+        ).strip()
 
+        fat = request.form.get(
+            "fat",
+            ""
+        ).strip()
 
+        fiber = request.form.get(
+            "fiber",
+            ""
+        ).strip()
+
+        # Check whether nutrition already exists
         nutrition_exists = connection.execute(
             """
             SELECT NutritionID
@@ -957,7 +988,6 @@ def edit_recipe(recipe_id):
             """,
             (recipe_id,)
         ).fetchone()
-
 
         if nutrition_exists:
 
@@ -1007,11 +1037,11 @@ def edit_recipe(recipe_id):
                 )
             )
 
-
+        # =================================================
+        # SAVE ALL CHANGES
+        # =================================================
         connection.commit()
-
         connection.close()
-
 
         flash("Recipe updated successfully!")
 
@@ -1022,10 +1052,9 @@ def edit_recipe(recipe_id):
             )
         )
 
-
-    # =========================
-    # GET DATA
-    # =========================
+    # =====================================================
+    # GET DATA FOR EDIT PAGE
+    # =====================================================
 
     meal_types = connection.execute(
         """
@@ -1035,7 +1064,6 @@ def edit_recipe(recipe_id):
         """
     ).fetchall()
 
-
     cuisines = connection.execute(
         """
         SELECT *
@@ -1043,7 +1071,6 @@ def edit_recipe(recipe_id):
         ORDER BY Name
         """
     ).fetchall()
-
 
     ingredients = connection.execute(
         """
@@ -1053,22 +1080,55 @@ def edit_recipe(recipe_id):
         """
     ).fetchall()
 
+    # =====================================================
+    # EXISTING INGREDIENTS
+    # Quantity + Unit
+    # =====================================================
 
     existing_ingredients = connection.execute(
         """
-        SELECT IngredientID
+        SELECT
+            Recipe_Ingredients.IngredientID,
+            Ingredients.Name,
+            Recipe_Ingredients.Quantity,
+            Recipe_Ingredients.Unit
         FROM Recipe_Ingredients
-        WHERE RecipeID = ?
+
+        JOIN Ingredients
+            ON Recipe_Ingredients.IngredientID =
+               Ingredients.IngredientID
+
+        WHERE Recipe_Ingredients.RecipeID = ?
+
+        ORDER BY Ingredients.Name
         """,
         (recipe_id,)
     ).fetchall()
 
+    # =====================================================
+    # CREATE DICTIONARY
+    # IngredientID -> Quantity + Unit
+    # =====================================================
+
+    existing_ingredients_dict = {}
+
+    for row in existing_ingredients:
+        existing_ingredients_dict[
+            row["IngredientID"]
+        ] = row
+
+    # =====================================================
+    # SELECTED INGREDIENT IDS
+    # =====================================================
 
     existing_ingredient_ids = {
         row["IngredientID"]
         for row in existing_ingredients
     }
 
+    # =====================================================
+    # NUTRITION
+    # =====================================================
 
     nutrition = connection.execute(
         """
@@ -1079,17 +1139,29 @@ def edit_recipe(recipe_id):
         (recipe_id,)
     ).fetchone()
 
-
     connection.close()
 
+    # =====================================================
+    # SEND DATA TO TEMPLATE
+    # =====================================================
 
     return render_template(
         "edit_recipe.html",
+
         recipe=recipe,
+
         meal_types=meal_types,
+
         cuisines=cuisines,
+
         ingredients=ingredients,
+
         existing_ingredient_ids=existing_ingredient_ids,
+
+        existing_ingredients=existing_ingredients,
+
+        existing_ingredients_dict=existing_ingredients_dict,
+
         nutrition=nutrition
     )
 # DELETE RECIPE
